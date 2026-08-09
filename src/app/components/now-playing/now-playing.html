@@ -28,8 +28,8 @@
     </div>
 
     @for (track of currentTrackList(); track track.id) {
-      <div class="flex min-h-0 flex-1 flex-col items-center px-4 pb-6 sm:px-6">
-        <div class="my-auto flex w-full flex-col items-center gap-7">
+      <div class="flex min-h-0 flex-1 flex-col items-center px-4 pb-6 sm:px-6 md:flex-row md:items-stretch md:gap-10 md:px-10 md:pb-8">
+        <div class="my-auto flex w-full flex-col items-center gap-7 md:min-w-0 md:flex-1">
           <div class="flex flex-col items-center gap-7" animate.enter="track-enter">
           <img
             [src]="track.cover"
@@ -125,7 +125,31 @@
             }
           </button>
           </div>
+
+        @if (track.lyricsUrl) {
+          <div class="mt-4 w-full max-w-xl md:hidden">
+            <div class="h-64 overflow-y-auto">
+              <app-lyrics-panel
+                [lines]="lyrics()"
+                [activeIndex]="activeLyricIndex()"
+                [loading]="lyricsLoading()"
+                [error]="lyricsError()"
+              />
+            </div>
+          </div>
+        }
         </div>
+
+      @if (track.lyricsUrl) {
+        <div class="hidden md:block md:w-1/2 md:min-w-0 md:self-stretch md:overflow-y-auto">
+          <app-lyrics-panel
+            [lines]="lyrics()"
+            [activeIndex]="activeLyricIndex()"
+            [loading]="lyricsLoading()"
+            [error]="lyricsError()"
+          />
+        </div>
+      }
       </div>
     } @empty {
       <div class="flex flex-1 items-center justify-center text-neutral-300">

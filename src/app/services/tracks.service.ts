@@ -76,6 +76,7 @@ export class TracksService {
         album: 'Currents',
         cover: '/caratulas/' + encodeURIComponent('TameImpala - TheLessIKnowTheBetter.webp'),
         audioUrl: '/music/' + encodeURIComponent('Tame Impala - The Less I Know The Better (Audio).mp3'),
+        lyricsUrl: '/lyrics/classic2.lrc',
         duration: 0,
       },
       {

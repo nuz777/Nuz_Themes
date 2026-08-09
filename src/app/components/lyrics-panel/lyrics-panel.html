@@ -1,0 +1,22 @@
+@if (loading()) {
+  <div class="px-1 py-8 text-sm text-neutral-400">Cargando letra...</div>
+} @else if (error()) {
+  <div class="px-1 py-8 text-sm text-neutral-400">No se pudo cargar la letra.</div>
+} @else if (!lines()?.length) {
+  <div class="px-1 py-8 text-sm text-neutral-400">Sin letra disponible.</div>
+} @else {
+  <div class="flex flex-col gap-4 px-1">
+    @for (line of lines(); track line.time + line.text; let i = $index) {
+      <p
+        [attr.data-line]="i"
+        [class.text-white]="i === activeIndex()"
+        [class.opacity-100]="i === activeIndex()"
+        [class.text-neutral-400]="i !== activeIndex()"
+        [class.opacity-60]="i !== activeIndex()"
+        class="text-lg font-semibold leading-snug transition-all duration-500"
+      >
+        {{ line.text }}
+      </p>
+    }
+  </div>
+}

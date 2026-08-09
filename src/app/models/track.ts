@@ -6,4 +6,5 @@ export interface Track {
   cover: string;
   audioUrl: string;
   duration: number;
+  lyricsUrl?: string;
 }
