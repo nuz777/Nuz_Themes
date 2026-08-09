@@ -16,6 +16,12 @@ export class PlayerBar {
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
+  protected progressStyle(): string {
+    const duration = this.audio.duration();
+    if (!duration) return '0%';
+    return `${Math.min(100, (this.audio.currentTime() / duration) * 100)}%`;
+  }
+
   protected onSeek(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.audio.seek(Number(input.value));

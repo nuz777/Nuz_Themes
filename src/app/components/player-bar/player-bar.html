@@ -7,6 +7,7 @@
     [value]="audio.currentTime()"
     (input)="onSeek($event)"
     class="player-range absolute inset-x-0 top-0 w-full md:hidden"
+    [style.--progress]="progressStyle()"
     aria-label="Progreso"
   />
 
@@ -113,6 +114,7 @@
         [value]="audio.currentTime()"
         (input)="onSeek($event)"
         class="player-range w-full"
+        [style.--progress]="progressStyle()"
         aria-label="Progreso"
       />
       <span class="w-10 tabular-nums">{{ formatTime(audio.duration()) }}</span>
@@ -131,6 +133,7 @@
       [value]="audio.volume()"
       (input)="onVolume($event)"
       class="player-range w-24"
+      [style.--progress]="(audio.volume() * 100) + '%'"
       aria-label="Volumen"
     />
   </div>
