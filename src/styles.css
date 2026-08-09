@@ -56,13 +56,6 @@ body {
   margin-top: -4px;
   border-radius: 50%;
   background: #fff;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.player-range:hover::-webkit-slider-thumb,
-.player-range:active::-webkit-slider-thumb {
-  opacity: 1;
 }
 
 .player-range::-moz-range-track {
@@ -83,20 +76,6 @@ body {
   border: none;
   border-radius: 50%;
   background: #fff;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.player-range:hover::-moz-range-thumb,
-.player-range:active::-moz-range-thumb {
-  opacity: 1;
-}
-
-@media (hover: none) {
-  .player-range::-webkit-slider-thumb,
-  .player-range::-moz-range-thumb {
-    opacity: 1;
-  }
 }
 
 .equalizer-bar {
