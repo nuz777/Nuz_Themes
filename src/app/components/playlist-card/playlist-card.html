@@ -1,0 +1,23 @@
+<a
+  [routerLink]="['/playlist', playlist().id]"
+  class="group rounded-lg p-4 transition"
+>
+  <div class="relative mb-4">
+    <img
+      [src]="playlist().cover"
+      [alt]="playlist().name"
+      class="aspect-square w-full rounded object-cover shadow-xl shadow-black"
+      loading="lazy"
+    />
+    <button
+      class="absolute bottom-2 right-2 flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-white text-black opacity-0 shadow-xl transition group-hover:translate-y-0 group-hover:opacity-100"
+      aria-label="Reproducir playlist"
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" class="fill-current translate-x-0.5">
+        <path d="M8 5v14l11-7L8 5z" />
+      </svg>
+    </button>
+  </div>
+  <h3 class="truncate font-bold text-white">{{ playlist().name }}</h3>
+  <p class="mt-1 line-clamp-2 text-sm text-neutral-400">{{ playlist().description }}</p>
+</a>

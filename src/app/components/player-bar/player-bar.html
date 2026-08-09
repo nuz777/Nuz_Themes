@@ -1,0 +1,137 @@
+<footer class="relative grid h-[90px] shrink-0 grid-cols-[1fr_auto] items-center gap-3 border-t border-neutral-900 bg-black px-3 md:grid-cols-3 md:gap-4 md:px-4">
+  <input
+    type="range"
+    min="0"
+    [max]="audio.duration() || 0"
+    step="0.1"
+    [value]="audio.currentTime()"
+    (input)="onSeek($event)"
+    class="player-range absolute inset-x-0 top-0 w-full md:hidden"
+    aria-label="Progreso"
+  />
+
+  @if (audio.currentTrack(); as track) {
+    <div class="flex min-w-0 items-center gap-3">
+      <button (click)="audio.openNowPlaying()" class="shrink-0">
+        <img [src]="track.cover" [alt]="track.title" class="h-10 w-10 rounded object-cover md:h-14 md:w-14" />
+      </button>
+      <div class="min-w-0">
+        <button
+          (click)="audio.openNowPlaying()"
+          class="block max-w-full truncate text-sm font-semibold text-white transition hover:underline"
+        >
+          {{ track.title }}
+        </button>
+        <button
+          (click)="audio.openNowPlaying()"
+          class="block max-w-full truncate text-xs text-neutral-400 transition hover:underline"
+        >
+          {{ track.artist }}
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div class="flex items-center gap-3 text-neutral-500">
+      <div class="h-10 w-10 rounded bg-neutral-900 md:h-14 md:w-14"></div>
+      <span class="text-sm">Nada sonando</span>
+    </div>
+  }
+
+  <div class="flex min-w-0 flex-col items-center gap-2">
+    <div class="flex items-center gap-5">
+      <button
+        (click)="audio.toggleShuffle()"
+        [class.text-white]="audio.shuffle()"
+        [class.text-neutral-500]="!audio.shuffle()"
+        class="hidden transition hover:text-white md:block"
+        aria-label="Aleatorio"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" class="fill-current">
+          <path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" />
+        </svg>
+      </button>
+
+      <button
+        (click)="audio.prev()"
+        class="text-neutral-400 transition hover:text-white"
+        aria-label="Anterior"
+      >
+        <svg width="28" height="28" viewBox="0 0 24 24" class="fill-current">
+          <path d="M6 6h2v12H6V6zm3.5 6 8.5 6V6l-8.5 6z" />
+        </svg>
+      </button>
+
+      <button
+        (click)="audio.togglePlay()"
+        class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-black transition hover:scale-105"
+        aria-label="Reproducir o pausar"
+      >
+        @if (audio.isPlaying()) {
+          <svg width="20" height="20" viewBox="0 0 24 24" class="fill-current">
+            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+          </svg>
+        } @else {
+          <svg width="20" height="20" viewBox="0 0 24 24" class="fill-current translate-x-0.5">
+            <path d="M8 5v14l11-7L8 5z" />
+          </svg>
+        }
+      </button>
+
+      <button
+        (click)="audio.next()"
+        class="text-neutral-400 transition hover:text-white"
+        aria-label="Siguiente"
+      >
+        <svg width="28" height="28" viewBox="0 0 24 24" class="fill-current">
+          <path d="M16 6h2v12h-2V6zM6 18l8.5-6L6 6v12z" />
+        </svg>
+      </button>
+
+      <button
+        (click)="audio.toggleRepeat()"
+        [class.text-white]="audio.repeat() !== 'off'"
+        [class.text-neutral-500]="audio.repeat() === 'off'"
+        class="relative hidden transition hover:text-white md:block"
+        aria-label="Repetir"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" class="fill-current">
+          <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+        </svg>
+        @if (audio.repeat() === 'one') {
+          <span class="absolute -top-1 right-0 text-[8px] font-bold text-white">1</span>
+        }
+      </button>
+    </div>
+
+    <div class="hidden w-full max-w-xl items-center gap-2 text-[11px] text-neutral-400 md:flex">
+      <span class="w-10 text-right tabular-nums">{{ formatTime(audio.currentTime()) }}</span>
+      <input
+        type="range"
+        min="0"
+        [max]="audio.duration() || 0"
+        step="0.1"
+        [value]="audio.currentTime()"
+        (input)="onSeek($event)"
+        class="player-range w-full"
+        aria-label="Progreso"
+      />
+      <span class="w-10 tabular-nums">{{ formatTime(audio.duration()) }}</span>
+    </div>
+  </div>
+
+  <div class="hidden items-center justify-end gap-2 md:flex">
+    <svg width="16" height="16" viewBox="0 0 24 24" class="shrink-0 fill-current text-neutral-400">
+      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05a4.5 4.5 0 0 0 2.5-4.02zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z" />
+    </svg>
+    <input
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      [value]="audio.volume()"
+      (input)="onVolume($event)"
+      class="player-range w-24"
+      aria-label="Volumen"
+    />
+  </div>
+</footer>

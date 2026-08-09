@@ -1,0 +1,53 @@
+@if (track(); as track) {
+  <div
+    class="relative overflow-hidden bg-gradient-to-b from-neutral-800 via-neutral-950 to-black px-6 pb-6 pt-8"
+  >
+    <div class="flex items-end gap-6">
+      <img
+        [src]="track.cover"
+        [alt]="track.title"
+        class="h-48 w-48 shrink-0 rounded shadow-2xl shadow-black"
+      />
+      <div class="min-w-0">
+        <p class="text-xs font-bold uppercase tracking-widest text-neutral-400">Canción</p>
+        <h1 class="mt-2 line-clamp-2 text-5xl font-black text-white">{{ track.title }}</h1>
+        <p class="mt-4 flex flex-wrap items-center gap-1 text-neutral-300">
+          <span class="font-bold text-white hover:underline">{{ track.artist }}</span>
+          <span>•</span>
+          <span>{{ track.album }}</span>
+        </p>
+        <p class="mt-2 text-sm font-semibold text-neutral-400">
+          {{ formatTime(audio.duration() && audio.currentTrack()?.id === track.id ? audio.duration() : 0) }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-gradient-to-b from-neutral-950 to-black p-6">
+    <div class="mb-6 flex items-center gap-6">
+      <button
+        (click)="playThis()"
+        [class.bg-white]="audio.currentTrack()?.id !== track.id"
+        [class.bg-neutral-600]="audio.currentTrack()?.id === track.id"
+        class="flex h-14 w-14 items-center justify-center rounded-full text-black transition hover:scale-105"
+        aria-label="Reproducir"
+      >
+        @if (audio.currentTrack()?.id === track.id && audio.isPlaying()) {
+          <svg width="26" height="26" viewBox="0 0 24 24" class="fill-current">
+            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+          </svg>
+        } @else {
+          <svg width="26" height="26" viewBox="0 0 24 24" class="fill-current translate-x-0.5">
+            <path d="M8 5v14l11-7L8 5z" />
+          </svg>
+        }
+      </button>
+    </div>
+
+    <app-track-list [tracks]="tracks()" />
+  </div>
+} @else {
+  <div class="flex h-full items-center justify-center p-10 text-neutral-400">
+    Canción no encontrada.
+  </div>
+}

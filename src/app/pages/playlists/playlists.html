@@ -1,0 +1,20 @@
+<section class="p-4 sm:p-6">
+  <header class="mb-6">
+    <h1 class="text-2xl font-bold text-white sm:text-3xl">Tu biblioteca</h1>
+    <p class="mt-1 text-neutral-400">Todas tus playlists guardadas.</p>
+  </header>
+
+  <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    @for (playlist of tracksService.playlists(); track playlist.id) {
+      <app-playlist-card [playlist]="playlist" />
+    }
+  </div>
+
+  <footer class="mt-12 flex flex-col items-center gap-3 border-t border-neutral-800 pt-8 text-center">
+    <img src="favicom.ico" alt="Nuz_Themes" class="h-12 w-12 rounded object-cover" />
+    <p class="font-pixel text-xs text-white">Nuz_Themes</p>
+    <p class="mt-1 max-w-sm text-xs leading-relaxed text-neutral-400">
+      Proyecto personal de Nuz, desarrollado con dedicación y sin fines de lucro.
+    </p>
+  </footer>
+</section>

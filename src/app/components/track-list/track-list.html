@@ -1,0 +1,58 @@
+<div class="rounded-lg px-3">
+  <div class="grid grid-cols-[16px_1fr_64px] gap-2 border-b border-neutral-800 px-4 pb-2 text-xs font-bold text-neutral-400 uppercase tracking-wider sm:grid-cols-[16px_1fr_1fr_64px] sm:gap-4">
+    <span class="text-right">#</span>
+    <span>Título</span>
+    <span class="hidden sm:block">Álbum</span>
+    <span class="text-right">⏱</span>
+  </div>
+
+  <ul class="mt-2 space-y-1">
+    @for (track of tracks(); track track.id; let i = $index) {
+      <li>
+        <button
+          (click)="playTrack(track, i)"
+          class="group grid w-full grid-cols-[16px_1fr_64px] items-center gap-2 rounded-md px-4 py-2 text-left transition hover:bg-neutral-800/80 sm:grid-cols-[16px_1fr_1fr_64px] sm:gap-4"
+        >
+          <span class="text-center text-sm tabular-nums text-neutral-400">
+            @if (audio.currentTrack()?.id === track.id && audio.isPlaying()) {
+              <span class="flex justify-center gap-[2px]">
+                <span class="equalizer-bar"></span>
+                <span class="equalizer-bar"></span>
+                <span class="equalizer-bar"></span>
+              </span>
+            } @else {
+              <span class="group-hover:hidden">{{ i + 1 }}</span>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                class="hidden fill-white group-hover:inline"
+              >
+                <path d="M8 5v14l11-7L8 5z" />
+              </svg>
+            }
+          </span>
+
+          <span class="flex min-w-0 items-center gap-3">
+            <img [src]="track.cover" [alt]="track.title" class="h-10 w-10 rounded bg-neutral-800 object-cover" loading="lazy" />
+            <span class="min-w-0">
+              <span
+                [class.text-white]="audio.currentTrack()?.id === track.id"
+                class="block truncate text-sm font-semibold text-neutral-100"
+              >
+                {{ track.title }}
+              </span>
+              <span class="block truncate text-sm text-neutral-400">{{ track.artist }}</span>
+            </span>
+          </span>
+
+          <span class="hidden truncate text-sm text-neutral-400 sm:block">{{ track.album }}</span>
+
+          <span class="text-right text-sm tabular-nums text-neutral-400">
+            {{ formatTime(track.duration) }}
+          </span>
+        </button>
+      </li>
+    }
+  </ul>
+</div>

@@ -1,0 +1,41 @@
+@if (playlist(); as playlist) {
+  <div
+    class="relative overflow-hidden bg-gradient-to-b from-neutral-800 via-neutral-950 to-black px-4 pb-6 pt-6 sm:px-6 sm:pt-8"
+  >
+    <div class="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-end sm:gap-6 sm:text-left">
+      <img
+        [src]="playlist.cover"
+        [alt]="playlist.name"
+        class="h-40 w-40 shrink-0 rounded shadow-2xl shadow-black sm:h-48 sm:w-48"
+      />
+      <div class="min-w-0">
+        <p class="text-xs font-bold uppercase tracking-widest text-neutral-400">Playlist</p>
+        <h1 class="mt-2 line-clamp-2 text-3xl font-black text-white sm:text-5xl">{{ playlist.name }}</h1>
+        <p class="mt-4 text-neutral-300">{{ playlist.description }}</p>
+        <p class="mt-2 text-sm font-semibold text-neutral-400">
+          {{ tracks().length }} canciones
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-gradient-to-b from-neutral-950 to-black p-4 sm:p-6">
+    <div class="mb-4 flex items-center gap-6">
+      <button
+        (click)="playAll()"
+        class="flex h-14 w-14 items-center justify-center rounded-full bg-white text-black transition hover:scale-105"
+        aria-label="Reproducir playlist"
+      >
+        <svg width="26" height="26" viewBox="0 0 24 24" class="fill-current translate-x-0.5">
+          <path d="M8 5v14l11-7L8 5z" />
+        </svg>
+      </button>
+    </div>
+
+    <app-track-list [tracks]="tracks()" />
+  </div>
+} @else {
+  <div class="flex h-full items-center justify-center p-10 text-neutral-400">
+    Playlist no encontrada.
+  </div>
+}
