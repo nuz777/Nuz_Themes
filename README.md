@@ -1,6 +1,8 @@
-# NuzThemeAngular
+# <img src="public/favicom.ico" alt="Nuz_Themes" width="28" height="28" align="center" /> Nuz_Themes
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.3.
+Reproductor de música en blanco y negro. Proyecto personal de Nuz, desarrollado con dedicación y sin fines de lucro.
+
+Generado con [Angular CLI](https://github.com/angular/angular-cli) version 22.1.3.
 
 ## Development server
 
