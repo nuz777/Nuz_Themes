@@ -2,10 +2,11 @@ import { Component, input, inject } from '@angular/core';
 import type { Track } from '../../models/track';
 import { AudioService } from '../../services/audio.service';
 import { DownloadButton } from '../download-button/download-button';
+import { FavoriteButton } from '../favorite-button/favorite-button';
 
 @Component({
   selector: 'app-track-list',
-  imports: [DownloadButton],
+  imports: [DownloadButton, FavoriteButton],
   templateUrl: './track-list.html',
 })
 export class TrackList {

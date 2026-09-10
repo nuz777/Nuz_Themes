@@ -5,6 +5,7 @@ import { Sidebar } from './components/sidebar/sidebar';
 import { PlayerBar } from './components/player-bar/player-bar';
 import { NowPlaying } from './components/now-playing/now-playing';
 import { Toast } from './components/toast/toast';
+import { FavoritesFAB } from './components/favorites-fab/favorites-fab';
 import { TracksService } from './services/tracks.service';
 import { AudioService } from './services/audio.service';
 
@@ -13,7 +14,7 @@ const MIN_VISIBLE_MS = 900;
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, Sidebar, PlayerBar, NowPlaying, Toast],
+  imports: [RouterOutlet, RouterLink, Sidebar, PlayerBar, NowPlaying, Toast, FavoritesFAB],
   templateUrl: './app.html',
 })
 export class App implements OnInit, OnDestroy {

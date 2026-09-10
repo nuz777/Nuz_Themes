@@ -3,10 +3,11 @@ import { AudioService } from '../../services/audio.service';
 import { TracksService } from '../../services/tracks.service';
 import { TrackList } from '../../components/track-list/track-list';
 import { DownloadButton } from '../../components/download-button/download-button';
+import { FavoriteButton } from '../../components/favorite-button/favorite-button';
 
 @Component({
   selector: 'app-track-page',
-  imports: [TrackList, DownloadButton],
+  imports: [TrackList, DownloadButton, FavoriteButton],
   templateUrl: './track.html',
 })
 export class TrackPage {

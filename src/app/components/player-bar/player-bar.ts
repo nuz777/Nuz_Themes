@@ -1,9 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { AudioService } from '../../services/audio.service';
+import { FavoriteButton } from '../favorite-button/favorite-button';
 
 @Component({
   selector: 'app-player-bar',
-  imports: [],
+  imports: [FavoriteButton],
   templateUrl: './player-bar.html',
 })
 export class PlayerBar {

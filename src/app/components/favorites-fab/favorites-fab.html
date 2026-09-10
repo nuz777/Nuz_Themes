@@ -1,0 +1,77 @@
+@if (favorites.count() > 0) {
+  @if (open()) {
+    <div
+      class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+      (click)="close()"
+    ></div>
+  }
+
+  @if (open()) {
+    <div
+      class="fixed bottom-24 right-4 z-50 w-80 max-h-[60dvh] overflow-hidden rounded-2xl border border-white/10 bg-neutral-950/95 shadow-2xl shadow-black backdrop-blur-xl sm:right-6 md:w-96"
+      style="animation: modal-enter 240ms ease-out"
+    >
+      <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div class="flex items-center gap-3">
+          <svg width="20" height="20" viewBox="0 0 24 24" class="fill-current text-red-500">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
+          <span class="text-sm font-bold text-white">Favoritos</span>
+          <span class="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-neutral-300">
+            {{ favorites.count() }}
+          </span>
+        </div>
+        <button
+          (click)="close()"
+          class="flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-800 hover:text-white"
+          aria-label="Cerrar"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" class="fill-current">
+            <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="max-h-[50dvh] overflow-y-auto">
+        @for (track of tracks(); track track.id) {
+          <button
+            (click)="playTrack(track)"
+            class="flex w-full items-center gap-3 px-5 py-3 text-left transition hover:bg-white/5"
+          >
+            <img
+              [src]="track.cover"
+              [alt]="track.title"
+              class="h-10 w-10 shrink-0 rounded bg-neutral-800 object-cover"
+              loading="lazy"
+            />
+            <div class="min-w-0 flex-1">
+              <span
+                [class.text-white]="audio.currentTrack()?.id === track.id"
+                class="block truncate text-sm font-semibold text-neutral-100"
+              >
+                {{ track.title }}
+              </span>
+              <span class="block truncate text-xs text-neutral-400">{{ track.artist }}</span>
+            </div>
+            <span class="shrink-0 text-xs tabular-nums text-neutral-500">
+              {{ formatTime(track.duration) }}
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <button
+    (click)="toggle()"
+    class="fixed bottom-24 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-red-500 text-white shadow-lg shadow-red-500/30 transition hover:scale-110 hover:shadow-red-500/50 sm:right-6"
+    [class.scale-110]="open()"
+    [class.ring-2]="open()"
+    [class.ring-white/30]="open()"
+    aria-label="Favoritos"
+  >
+    <svg width="22" height="22" viewBox="0 0 24 24" class="fill-current">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    </svg>
+  </button>
+}

@@ -10,10 +10,11 @@ import { AmbientColorService } from '../../services/ambient-color.service';
 import { LyricsService, type LyricLine } from '../../services/lyrics.service';
 import { LyricsPanel } from '../lyrics-panel/lyrics-panel';
 import { DownloadButton } from '../download-button/download-button';
+import { FavoriteButton } from '../favorite-button/favorite-button';
 
 @Component({
   selector: 'app-now-playing',
-  imports: [LyricsPanel, DownloadButton],
+  imports: [LyricsPanel, DownloadButton, FavoriteButton],
   templateUrl: './now-playing.html',
 })
 export class NowPlaying {
@@ -177,5 +178,35 @@ export class NowPlaying {
 
   protected onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') this.audio.closeNowPlaying();
+  }
+
+  private swipeStartX = 0;
+  private swipeStartY = 0;
+
+  protected onCoverTouchStart(event: TouchEvent): void {
+    this.swipeStartX = event.touches[0].clientX;
+    this.swipeStartY = event.touches[0].clientY;
+  }
+
+  protected onCoverTouchEnd(event: TouchEvent): void {
+    const dx = event.changedTouches[0].clientX - this.swipeStartX;
+    const dy = event.changedTouches[0].clientY - this.swipeStartY;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) {
+        this.audio.next();
+      } else {
+        this.audio.prev();
+      }
+    }
+  }
+
+  protected onCoverWheel(event: WheelEvent): void {
+    if (Math.abs(event.deltaX) > Math.abs(event.deltaY) && Math.abs(event.deltaX) > 20) {
+      if (event.deltaX > 0) {
+        this.audio.next();
+      } else {
+        this.audio.prev();
+      }
+    }
   }
 }
