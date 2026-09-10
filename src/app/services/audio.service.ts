@@ -16,6 +16,7 @@ export class AudioService {
   readonly repeat = signal<RepeatMode>('off');
   readonly showNowPlaying = signal(false);
   readonly playbackError = signal(false);
+  readonly loading = signal(false);
 
   private readonly offline = inject(OfflineStorageService);
 
@@ -162,6 +163,12 @@ export class AudioService {
     this.audio.addEventListener('pause', () => this.isPlaying.set(false));
     this.audio.addEventListener('playing', () => this.playbackError.set(false));
     this.audio.addEventListener('error', () => this.playbackError.set(true));
+    this.audio.addEventListener('loadstart', () => this.loading.set(true));
+    this.audio.addEventListener('waiting', () => this.loading.set(true));
+    this.audio.addEventListener('playing', () => this.loading.set(false));
+    this.audio.addEventListener('canplay', () => this.loading.set(false));
+    this.audio.addEventListener('loadeddata', () => this.loading.set(false));
+    this.audio.addEventListener('error', () => this.loading.set(false));
     this.audio.addEventListener('ended', () => this.handleEnded());
   }
 

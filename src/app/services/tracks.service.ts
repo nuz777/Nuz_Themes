@@ -144,7 +144,7 @@ export class TracksService {
       },
       {
         id: 'ph2',
-        title: 'MONTAGEM DOENÇA HIPERTÉTICA (Slowed)',
+        title: 'MONTAGEM HIPERTÉTICA',
         artist: 'Nuz',
         album: 'Phonk',
         cover: '/caratulas/' + encodeURIComponent('MONTAGEM DOENÇA HIPERTÉTICA (Slowed) .jpg'),
@@ -153,7 +153,7 @@ export class TracksService {
       },
       {
         id: 'ph3',
-        title: 'MONTAGEM GRITOS TALENTO 3 (super slowed) x Sara Edit',
+        title: 'MONTAGEM TALENTO 3',
         artist: 'Nuz',
         album: 'Phonk',
         cover: '/caratulas/MontagenGritos.png',
