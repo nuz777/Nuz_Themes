@@ -24,6 +24,7 @@ export class App implements OnInit, OnDestroy {
   private readonly mediaSession = inject(MediaSessionService);
 
   protected readonly sidebarOpen = signal(false);
+  protected readonly isFullscreen = signal(false);
 
   private readonly routerSub = inject(Router).events.subscribe((event) => {
     if (event instanceof NavigationStart) {
@@ -31,6 +32,33 @@ export class App implements OnInit, OnDestroy {
       this.sidebarOpen.set(false);
     }
   });
+
+  protected toggleFullscreen(): void {
+    if (typeof document === 'undefined') return;
+
+    const exit = (): void => {
+      this.isFullscreen.set(false);
+    };
+
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => {});
+      exit();
+      return;
+    }
+
+    const el = document.documentElement;
+    const req = el.requestFullscreen();
+
+    if (req && typeof req.then === 'function') {
+      req.then(() => this.isFullscreen.set(true)).catch(() => {});
+    } else {
+      this.isFullscreen.set(true);
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) exit();
+    });
+  }
 
   ngOnInit(): void {
     this.hideBootLoader();
