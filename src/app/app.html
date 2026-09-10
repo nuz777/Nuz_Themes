@@ -42,4 +42,15 @@
   <app-player-bar />
   <app-toast />
   <app-favorites-fab />
+
+  @if (audio.loading()) {
+    <div class="loading-screen fixed inset-0 z-[70] flex items-center justify-center">
+      <div class="flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-neutral-950/90 px-10 py-8 shadow-2xl shadow-black backdrop-blur-md">
+        <div class="load-waves" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <p class="text-sm font-semibold tracking-widest uppercase text-neutral-200">Cargando...</p>
+      </div>
+    </div>
+  }
 </div>

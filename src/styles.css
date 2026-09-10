@@ -175,6 +175,18 @@ body {
   }
 }
 
+.loading-screen {
+  pointer-events: none;
+  opacity: 0;
+  animation: loading-fade-in 0.25s ease-out 0.4s forwards;
+}
+
+@keyframes loading-fade-in {
+  to {
+    opacity: 1;
+  }
+}
+
 .load-waves {
   display: flex;
   align-items: center;
