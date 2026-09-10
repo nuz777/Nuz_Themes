@@ -11,10 +11,11 @@ import { LyricsService, type LyricLine } from '../../services/lyrics.service';
 import { LyricsPanel } from '../lyrics-panel/lyrics-panel';
 import { DownloadButton } from '../download-button/download-button';
 import { FavoriteButton } from '../favorite-button/favorite-button';
+import { PipButton } from '../pip-button/pip-button';
 
 @Component({
   selector: 'app-now-playing',
-  imports: [LyricsPanel, DownloadButton, FavoriteButton],
+  imports: [LyricsPanel, DownloadButton, FavoriteButton, PipButton],
   templateUrl: './now-playing.html',
 })
 export class NowPlaying {

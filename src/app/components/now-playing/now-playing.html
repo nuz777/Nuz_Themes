@@ -95,7 +95,7 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-4 rounded-full border border-white/10 bg-black/30 px-5 py-3 shadow-2xl shadow-black/50 backdrop-blur-md sm:gap-5 sm:px-6">
+        <div class="flex items-center gap-1 rounded-full border border-white/10 bg-black/30 px-3 py-3 shadow-2xl shadow-black/50 backdrop-blur-md sm:gap-5 sm:px-6">
           <button
             (click)="audio.toggleShuffle()"
             [class.text-white]="audio.shuffle()"
@@ -159,6 +159,7 @@
             }
           </button>
 
+          <app-pip-button />
           <app-favorite-button [track]="track" />
           <app-download-button [track]="track" />
           </div>

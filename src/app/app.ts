@@ -8,6 +8,7 @@ import { Toast } from './components/toast/toast';
 import { FavoritesFAB } from './components/favorites-fab/favorites-fab';
 import { TracksService } from './services/tracks.service';
 import { AudioService } from './services/audio.service';
+import { MediaSessionService } from './services/media-session.service';
 
 const BOOT_LOADER_ID = 'boot-loader';
 const MIN_VISIBLE_MS = 900;
@@ -20,6 +21,7 @@ const MIN_VISIBLE_MS = 900;
 export class App implements OnInit, OnDestroy {
   protected readonly tracksService = inject(TracksService);
   protected readonly audio = inject(AudioService);
+  private readonly mediaSession = inject(MediaSessionService);
 
   protected readonly sidebarOpen = signal(false);
 

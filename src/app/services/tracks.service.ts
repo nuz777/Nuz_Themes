@@ -196,6 +196,15 @@ export class TracksService {
         audioUrl: '/music/' + encodeURIComponent('𝐁𝐫𝐨𝐨𝐤𝐥𝐲𝐧 𝐁𝐥𝐨𝐨𝐝 𝐏𝐨𝐩 𝐗 𝐕𝐚𝐜𝐚𝐭𝐢𝐨𝐧 𝐁𝐢𝐛𝐥𝐞 𝐒𝐜𝐡𝐨𝐨𝐥 (𝐒𝐥𝐨𝐰𝐞𝐝).mp3'),
         duration: 0,
       },
+      {
+        id: 'nuz6',
+        title: 'Make U Whole',
+        artist: 'Nuz',
+        album: 'Nuz',
+        cover: '/caratulas/makeuwhole.png',
+        audioUrl: '/music/Make U Whole.mp3',
+        duration: 0,
+      },
     ];
   }
 
@@ -220,7 +229,7 @@ export class TracksService {
         name: 'nuzthemes',
         description: 'Los temas de Nuz.',
         cover: '/caratulas/' + encodeURIComponent('Snow Strippers - Passionate highs.webp'),
-        trackIds: ['nuz1', 'nuz2', 'nuz3', 'nuz4', 'nuz5'],
+        trackIds: ['nuz1', 'nuz2', 'nuz3', 'nuz4', 'nuz5', 'nuz6'],
       },
       {
         id: 'snicore',

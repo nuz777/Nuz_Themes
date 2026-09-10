@@ -27,6 +27,10 @@ export class AudioService {
     return typeof window !== 'undefined' && typeof document !== 'undefined';
   }
 
+  get element(): HTMLAudioElement | null {
+    return this.audio;
+  }
+
   openNowPlaying(): void {
     this.showNowPlaying.set(true);
   }
