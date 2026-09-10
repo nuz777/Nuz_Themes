@@ -9,6 +9,7 @@ interface Rgb {
 @Injectable({ providedIn: 'root' })
 export class AmbientColorService {
   private readonly cache = new Map<string, string>();
+  private readonly colorCache = new Map<string, string>();
   private readonly fallback =
     'linear-gradient(180deg, #181818 0%, #101010 55%, #000000 100%)';
 
@@ -20,13 +21,33 @@ export class AmbientColorService {
     const cached = this.cache.get(imageUrl);
     if (cached) return cached;
 
-    const gradient = await this.extract(imageUrl);
+    const color = await this.analyze(imageUrl);
+    if (!color || this.saturation(color) < 0.15) {
+      this.cache.set(imageUrl, this.fallback);
+      return this.fallback;
+    }
+
+    const dark = this.darken(color, 0.25);
+    const gradient = `linear-gradient(180deg, ${this.hex(color)} 0%, ${this.hex(
+      dark,
+    )} 55%, #000000 100%)`;
+
     this.cache.set(imageUrl, gradient);
     return gradient;
   }
 
-  private async extract(imageUrl: string): Promise<string> {
-    if (!this.isBrowser) return this.fallback;
+  async getColor(imageUrl: string): Promise<string> {
+    const cached = this.colorCache.get(imageUrl);
+    if (cached) return cached;
+
+    const color = await this.analyze(imageUrl);
+    const hex = color ? this.hex(color) : '#ffffff';
+    this.colorCache.set(imageUrl, hex);
+    return hex;
+  }
+
+  private async analyze(imageUrl: string): Promise<Rgb | null> {
+    if (!this.isBrowser) return null;
 
     const image = new Image();
     image.crossOrigin = 'anonymous';
@@ -43,7 +64,7 @@ export class AmbientColorService {
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d');
-      if (!ctx) return this.fallback;
+      if (!ctx) return null;
 
       ctx.drawImage(image, 0, 0, size, size);
       const { data } = ctx.getImageData(0, 0, size, size);
@@ -67,11 +88,10 @@ export class AmbientColorService {
         }
       }
 
-      if (!buckets.size) return this.fallback;
+      if (!buckets.size) return null;
 
       const colors = [...buckets.entries()]
-        .map(([key, { count, rgb }]) => ({
-          key,
+        .map(([, { count, rgb }]) => ({
           count,
           avg: {
             r: Math.round(rgb.r / count),
@@ -82,7 +102,7 @@ export class AmbientColorService {
         .sort((a, b) => b.count - a.count);
 
       const top = colors.slice(0, Math.min(5, colors.length));
-      const vibrant = top.reduce<{ key: string; count: number; avg: Rgb; s: number }>(
+      const vibrant = top.reduce<{ count: number; avg: Rgb; s: number }>(
         (best, c) => {
           const s = this.saturation(c.avg);
           return s > best.s ? { ...c, s } : best;
@@ -90,19 +110,9 @@ export class AmbientColorService {
         { ...top[0], s: 0 },
       );
 
-      const topColor = vibrant.avg;
-
-      if (vibrant.s < 0.15) return this.fallback;
-
-      const dark = this.darken(topColor, 0.25);
-
-      const gradient = `linear-gradient(180deg, ${this.hex(topColor)} 0%, ${this.hex(
-        dark,
-      )} 55%, #000000 100%)`;
-
-      return gradient;
+      return vibrant.s < 0.15 ? null : vibrant.avg;
     } catch {
-      return this.fallback;
+      return null;
     }
   }
 

@@ -215,3 +215,38 @@ body {
     transform: scaleY(1.4);
   }
 }
+
+.wave-live {
+  animation: wave-play 1s ease-in-out infinite;
+}
+
+@keyframes wave-play {
+  0%,
+  100% {
+    transform: scaleY(0.75);
+  }
+  50% {
+    transform: scaleY(1.25);
+  }
+}
+
+.glow-breathe {
+  animation: glow-breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes glow-breathe {
+  0%,
+  100% {
+    transform: scale(0.94);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave-live,
+  .glow-breathe {
+    animation: none;
+  }
+}

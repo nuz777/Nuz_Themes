@@ -167,7 +167,6 @@ export class TracksService {
         album: 'Hold Me in Your Arms',
         cover: '/caratulas/takemetoyourheart.webp',
         audioUrl: '/music/' + encodeURIComponent('Take Me to Your Heart (Autumn Leaves Mix).mp3'),
-        lyricsUrl: '/lyrics/takeme.lrc',
         duration: 0,
       },
       {
