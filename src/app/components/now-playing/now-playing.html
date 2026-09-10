@@ -40,6 +40,11 @@
           <div class="w-full max-w-xl text-center">
             <h2 class="truncate text-2xl font-black text-white sm:text-3xl">{{ track.title }}</h2>
             <p class="mt-1 truncate text-base text-neutral-200 sm:text-lg">{{ track.artist }}</p>
+            @if (audio.playbackError()) {
+              <p class="mx-auto mt-3 max-w-sm rounded-md bg-red-900/40 px-3 py-2 text-sm text-red-200">
+                No se pudo reproducir. Si estás sin conexión, descargá la canción para poder escucharla.
+              </p>
+            }
           </div>
         </div>
 
@@ -124,6 +129,8 @@
               <span class="absolute -top-1 right-0 text-[8px] font-bold text-white">1</span>
             }
           </button>
+
+          <app-download-button [track]="track" />
           </div>
 
         @if (track.lyricsUrl) {

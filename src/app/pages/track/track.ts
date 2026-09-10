@@ -2,10 +2,11 @@ import { Component, inject, input, computed } from '@angular/core';
 import { AudioService } from '../../services/audio.service';
 import { TracksService } from '../../services/tracks.service';
 import { TrackList } from '../../components/track-list/track-list';
+import { DownloadButton } from '../../components/download-button/download-button';
 
 @Component({
   selector: 'app-track-page',
-  imports: [TrackList],
+  imports: [TrackList, DownloadButton],
   templateUrl: './track.html',
 })
 export class TrackPage {

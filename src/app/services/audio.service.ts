@@ -1,5 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import type { Track } from '../models/track';
+import { OfflineStorageService } from './offline-storage.service';
 
 type RepeatMode = 'off' | 'all' | 'one';
 
@@ -14,6 +15,9 @@ export class AudioService {
   readonly shuffle = signal(false);
   readonly repeat = signal<RepeatMode>('off');
   readonly showNowPlaying = signal(false);
+  readonly playbackError = signal(false);
+
+  private readonly offline = inject(OfflineStorageService);
 
   private audio: HTMLAudioElement | null = null;
   private queueIndex = -1;
@@ -46,9 +50,20 @@ export class AudioService {
     }
 
     this.currentTrack.set(track);
-    this.audio!.src = track.audioUrl;
+    void this.loadAndPlay(track);
+  }
+
+  private async loadAndPlay(track: Track): Promise<void> {
+    const src = await this.offline.resolveSourceUrl(track);
+    if (this.currentTrack()?.id !== track.id) return;
+
+    this.audio!.src = src;
     this.audio!.load();
-    void this.audio!.play();
+    try {
+      await this.audio!.play();
+    } catch {
+      this.playbackError.set(true);
+    }
   }
 
   playQueue(queue: Track[], startIndex = 0): void {
@@ -145,6 +160,8 @@ export class AudioService {
     });
     this.audio.addEventListener('play', () => this.isPlaying.set(true));
     this.audio.addEventListener('pause', () => this.isPlaying.set(false));
+    this.audio.addEventListener('playing', () => this.playbackError.set(false));
+    this.audio.addEventListener('error', () => this.playbackError.set(true));
     this.audio.addEventListener('ended', () => this.handleEnded());
   }
 

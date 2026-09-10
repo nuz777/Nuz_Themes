@@ -9,10 +9,11 @@ import { AudioService } from '../../services/audio.service';
 import { AmbientColorService } from '../../services/ambient-color.service';
 import { LyricsService, type LyricLine } from '../../services/lyrics.service';
 import { LyricsPanel } from '../lyrics-panel/lyrics-panel';
+import { DownloadButton } from '../download-button/download-button';
 
 @Component({
   selector: 'app-now-playing',
-  imports: [LyricsPanel],
+  imports: [LyricsPanel, DownloadButton],
   templateUrl: './now-playing.html',
 })
 export class NowPlaying {
