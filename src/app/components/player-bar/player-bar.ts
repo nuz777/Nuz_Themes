@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { AudioService } from '../../services/audio.service';
+import { DurationService } from '../../services/duration.service';
 import { FavoriteButton } from '../favorite-button/favorite-button';
 
 @Component({
@@ -9,12 +10,20 @@ import { FavoriteButton } from '../favorite-button/favorite-button';
 })
 export class PlayerBar {
   protected readonly audio = inject(AudioService);
+  private readonly durations = inject(DurationService);
 
   protected formatTime(seconds: number): string {
     if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  protected duration(): number {
+    const track = this.audio.currentTrack();
+    const real = this.audio.duration();
+    if (real && Number.isFinite(real)) return real;
+    return track ? this.durations.durationOf(track.id) : 0;
   }
 
   protected progressStyle(): string {

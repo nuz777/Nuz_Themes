@@ -2,7 +2,7 @@
   <input
     type="range"
     min="0"
-    [max]="audio.duration() || 0"
+    [max]="duration() || 0"
     step="0.1"
     [value]="audio.currentTime()"
     (input)="onSeek($event)"
@@ -116,7 +116,7 @@
         <input
           type="range"
           min="0"
-          [max]="audio.duration() || 0"
+          [max]="duration() || 0"
           step="0.1"
           [value]="audio.currentTime()"
           (input)="onSeek($event)"
@@ -130,7 +130,7 @@
           </div>
         }
       </div>
-      <span class="w-10 tabular-nums">{{ formatTime(audio.duration()) }}</span>
+      <span class="w-10 tabular-nums">{{ formatTime(duration()) }}</span>
     </div>
   </div>
 

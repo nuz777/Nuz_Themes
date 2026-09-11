@@ -179,6 +179,15 @@ export class TracksService {
         duration: 0,
       },
       {
+        id: 'anim2',
+        title: 'Fall From The Sky Pt.2',
+        artist: 'Stakillaz',
+        album: 'Animation',
+        cover: '/caratulas/ROMANCEPLANET.webp',
+        audioUrl: '/music/' + encodeURIComponent('ROMANCEPLANET w STAKILLAZ - FALL FROM THE SKY PT.2 (OFFICIAL AUDIO).mp3'),
+        duration: 0,
+      },
+      {
         id: 'nuz4',
         title: 'Russian Car Driver',
         artist: 'OST',
@@ -215,7 +224,7 @@ export class TracksService {
         name: 'animation',
         description: 'Música de tus animaciones.',
         cover: '/caratulas/image.webp',
-        trackIds: ['local1', 'anim1'],
+        trackIds: ['local1', 'anim1', 'anim2'],
       },
       {
         id: 'phonk',
