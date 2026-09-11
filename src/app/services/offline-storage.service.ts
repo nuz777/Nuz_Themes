@@ -108,9 +108,10 @@ export class OfflineStorageService {
   private async runDownload(track: Track): Promise<void> {
     try {
       const blob = await this.fetchAndStore(track);
-      this.saveToDevice(track, blob);
+      const withCover = await this.embedCover(track, blob);
+      this.saveToDevice(track, withCover);
       this.toast.show(
-        `"${track.title}" descargada para escuchar offline y guardada en tu dispositivo`,
+        `"${track.title}" descargada con su carátula y guardada en tu dispositivo`,
         'success',
         track.cover,
         track.title,
@@ -192,6 +193,71 @@ export class OfflineStorageService {
     }
 
     return new Blob(chunks, { type: 'audio/mpeg' });
+  }
+
+  private async embedCover(track: Track, audioBlob: Blob): Promise<Blob> {
+    if (typeof document === 'undefined' || typeof Image === 'undefined') return audioBlob;
+
+    try {
+      const img = await this.loadCover(track.cover);
+      const jpeg = await this.canvasToJpeg(img, 512);
+
+      const { ID3Writer } = await import('browser-id3-writer');
+
+      const writer = new ID3Writer(await audioBlob.arrayBuffer());
+      writer
+        .setFrame('TIT2', track.title)
+        .setFrame('TPE1', [track.artist])
+        .setFrame('TALB', track.album)
+        .setFrame('APIC', {
+          type: 3,
+          data: jpeg.buffer,
+          description: track.title,
+        });
+      writer.addTag();
+
+      return new Blob([writer.getBlob()], { type: 'audio/mpeg' });
+    } catch {
+      // Si no se puede incrustar la carátula, se guarda el audio tal cual.
+      return audioBlob;
+    }
+  }
+
+  private loadCover(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('cover load failed'));
+      img.src = url;
+    });
+  }
+
+  private canvasToJpeg(img: HTMLImageElement, size: number): Promise<Uint8Array> {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(new Uint8Array(0));
+        return;
+      }
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, size, size);
+
+      const scale = Math.min(size / img.width, size / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      const bytes = atob(dataUrl.split(',')[1]);
+      const out = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) out[i] = bytes.charCodeAt(i);
+      resolve(out);
+    });
   }
 
   private async saveToDevice(track: Track, blob: Blob): Promise<void> {
