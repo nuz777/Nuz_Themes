@@ -13,11 +13,13 @@ interface StoredAudio {
 const DB_NAME = 'nuz-offline';
 const DB_VERSION = 1;
 const STORE = 'audio';
+const DEVICE_KEY = 'nuz-device-downloads';
 
 @Injectable({ providedIn: 'root' })
 export class OfflineStorageService {
   readonly status = signal<Record<string, DownloadStatus>>({});
   readonly progress = signal<Record<string, number>>({});
+  readonly deviceDownloads = signal<Set<string>>(this.loadDeviceDownloads());
 
   private readonly toast = inject(ToastService);
 
@@ -35,6 +37,14 @@ export class OfflineStorageService {
 
   isDownloaded(id: string): boolean {
     return this.status()[id] === 'downloaded';
+  }
+
+  isDeviceDownloaded(id: string): boolean {
+    return this.deviceDownloads().has(id);
+  }
+
+  deviceCount(): number {
+    return this.deviceDownloads().size;
   }
 
   download(track: Track): Promise<void> {
@@ -62,6 +72,13 @@ export class OfflineStorageService {
 
     this.objectUrls.delete(track.id);
     this.clearTrackState(track.id);
+
+    this.deviceDownloads.update((prev) => {
+      const next = new Set(prev);
+      next.delete(track.id);
+      return next;
+    });
+    this.persistDeviceDownloads();
   }
 
   async resolveSourceUrl(track: Track): Promise<string> {
@@ -90,9 +107,10 @@ export class OfflineStorageService {
 
   private async runDownload(track: Track): Promise<void> {
     try {
-      await this.fetchAndStore(track);
+      const blob = await this.fetchAndStore(track);
+      this.saveToDevice(track, blob);
       this.toast.show(
-        `"${track.title}" descargada para escuchar offline`,
+        `"${track.title}" descargada para escuchar offline y guardada en tu dispositivo`,
         'success',
         track.cover,
         track.title,
@@ -125,7 +143,7 @@ export class OfflineStorageService {
     }
   }
 
-  private async fetchAndStore(track: Track): Promise<void> {
+  private async fetchAndStore(track: Track): Promise<Blob> {
     this.setStatus(track.id, 'downloading');
     this.setProgress(track.id, 0);
 
@@ -144,6 +162,7 @@ export class OfflineStorageService {
       await this.putBlob(db, { id: track.id, blob, savedAt: Date.now() });
       this.setStatus(track.id, 'downloaded');
       this.setProgress(track.id, 100);
+      return blob;
     } catch {
       this.setStatus(track.id, 'error');
       this.clearProgress(track.id);
@@ -173,6 +192,44 @@ export class OfflineStorageService {
     }
 
     return new Blob(chunks, { type: 'audio/mpeg' });
+  }
+
+  private async saveToDevice(track: Track, blob: Blob): Promise<void> {
+    if (typeof document === 'undefined') return;
+
+    try {
+      const fileName = `${track.title.replace(/[\\/:*?"<>|]/g, '').trim() || 'audio'}.mp3`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+
+      this.deviceDownloads.update((prev) => new Set(prev).add(track.id));
+      this.persistDeviceDownloads();
+    } catch {
+      // Si el navegador no permite guardar el archivo, se sigue pudiendo escuchar offline.
+    }
+  }
+
+  private loadDeviceDownloads(): Set<string> {
+    if (typeof localStorage === 'undefined') return new Set();
+    try {
+      const raw = localStorage.getItem(DEVICE_KEY);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  }
+
+  private persistDeviceDownloads(): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(DEVICE_KEY, JSON.stringify([...this.deviceDownloads()]));
+    } catch {}
   }
 
   private setStatus(id: string, status: DownloadStatus): void {

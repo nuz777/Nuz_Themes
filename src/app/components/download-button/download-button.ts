@@ -28,6 +28,6 @@ export class DownloadButton {
     if (status === 'downloading') return 'Descargando...';
     if (status === 'downloaded') return 'Descargada. Clic para eliminar';
     if (status === 'error') return 'Error. Clic para reintentar';
-    return 'Descargar para escuchar sin conexión';
+    return 'Descargar a tu dispositivo';
   }
 }

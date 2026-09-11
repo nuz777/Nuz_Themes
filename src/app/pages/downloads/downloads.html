@@ -7,6 +7,11 @@
       } @else {
         Tus canciones descargadas para escuchar sin conexión a internet.
       }
+      @if (offline.deviceCount()) {
+        <span class="mt-1 block text-sm text-neutral-500">
+          {{ offline.deviceCount() }} guardada{{ offline.deviceCount() === 1 ? '' : 's' }} en tu dispositivo.
+        </span>
+      }
     </p>
   </header>
 

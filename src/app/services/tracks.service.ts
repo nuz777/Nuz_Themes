@@ -188,6 +188,15 @@ export class TracksService {
         duration: 0,
       },
       {
+        id: 'anim3',
+        title: 'Aishite, Aishite, Aishite',
+        artist: 'Kikuo',
+        album: 'Animation',
+        cover: '/caratulas/ashide.webp',
+        audioUrl: '/music/' + encodeURIComponent('aishite, aishite, aishite kikuo.mp3'),
+        duration: 0,
+      },
+      {
         id: 'nuz4',
         title: 'Russian Car Driver',
         artist: 'OST',
@@ -224,7 +233,7 @@ export class TracksService {
         name: 'animation',
         description: 'Música de tus animaciones.',
         cover: '/caratulas/image.webp',
-        trackIds: ['local1', 'anim1', 'anim2'],
+        trackIds: ['local1', 'anim1', 'anim2', 'anim3'],
       },
       {
         id: 'phonk',
