@@ -197,6 +197,16 @@ export class TracksService {
         duration: 0,
       },
       {
+        id: 'anim4',
+        title: 'Looping the Rooms',
+        artist: 'Hatsune Miku',
+        album: 'Animation',
+        cover: '/caratulas/miku.webp',
+        audioUrl: '/music/' + encodeURIComponent('Looping the Rooms ft. Hatsune Miku.mp3'),
+        videoUrl: '/video/' + encodeURIComponent('ループザルーム feat. 初音ミク Looping the Rooms ft. Hatsune Miku.mp4'),
+        duration: 0,
+      },
+      {
         id: 'nuz4',
         title: 'Russian Car Driver',
         artist: 'OST',
@@ -233,7 +243,7 @@ export class TracksService {
         name: 'animation',
         description: 'Música de tus animaciones.',
         cover: '/caratulas/image.webp',
-        trackIds: ['local1', 'anim1', 'anim2', 'anim3'],
+        trackIds: ['local1', 'anim1', 'anim2', 'anim3', 'anim4'],
       },
       {
         id: 'phonk',

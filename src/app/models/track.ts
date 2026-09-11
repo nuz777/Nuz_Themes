@@ -7,4 +7,5 @@ export interface Track {
   audioUrl: string;
   duration: number;
   lyricsUrl?: string;
+  videoUrl?: string;
 }

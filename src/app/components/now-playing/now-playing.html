@@ -6,6 +6,20 @@
     tabindex="-1"
     animate.leave="modal-leave"
   >
+    @if (audio.currentTrack()?.videoUrl; as videoUrl) {
+      <div class="pointer-events-none absolute inset-0 overflow-hidden">
+        <video
+          #bgVideo
+          [src]="videoUrl"
+          class="h-full w-full object-cover opacity-40"
+          [muted]="true"
+          loop
+          playsinline
+          autoplay
+        ></video>
+        <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90"></div>
+      </div>
+    }
     <div class="flex min-h-full flex-col" animate.enter="modal-enter">
     <div class="flex items-center justify-between p-4 pb-2 sm:p-6 sm:pb-2">
       <div class="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-neutral-300">
