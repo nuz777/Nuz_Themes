@@ -1,6 +1,7 @@
 {
   "name": "nuz-theme-angular",
   "version": "0.0.0",
+  "license": "UNLICENSED",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
