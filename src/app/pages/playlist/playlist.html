@@ -3,11 +3,17 @@
     class="relative overflow-hidden bg-gradient-to-b from-neutral-800 via-neutral-950 to-black px-4 pb-6 pt-6 sm:px-6 sm:pt-8"
   >
     <div class="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-end sm:gap-6 sm:text-left">
-      <img
-        [src]="playlist.cover"
-        [alt]="playlist.name"
-        class="h-40 w-40 shrink-0 rounded shadow-2xl shadow-black sm:h-48 sm:w-48"
-      />
+      <div class="relative h-40 w-40 shrink-0 sm:h-48 sm:w-48">
+        @for (cover of covers(); track cover; let i = $index) {
+          <img
+            [src]="cover"
+            [alt]="playlist.name"
+            class="absolute inset-0 h-full w-full rounded object-cover shadow-2xl shadow-black transition-opacity duration-1000"
+            [class.opacity-0]="i !== activeIndex()"
+            [class.duration-500]="covers().length === 1"
+          />
+        }
+      </div>
       <div class="min-w-0">
         <p class="text-xs font-bold uppercase tracking-widest text-neutral-400">Playlist</p>
         <h1 class="mt-2 line-clamp-2 text-3xl font-black text-white sm:text-5xl">{{ playlist.name }}</h1>

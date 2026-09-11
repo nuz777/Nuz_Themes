@@ -2,13 +2,17 @@
   [routerLink]="['/playlist', playlist().id]"
   class="group rounded-lg p-4 transition"
 >
-  <div class="relative mb-4">
-    <img
-      [src]="playlist().cover"
-      [alt]="playlist().name"
-      class="aspect-square w-full rounded object-cover shadow-xl shadow-black"
-      loading="lazy"
-    />
+  <div class="relative mb-4 aspect-square overflow-hidden">
+    @for (cover of covers(); track cover; let i = $index) {
+      <img
+        [src]="cover"
+        [alt]="playlist().name"
+        class="absolute inset-0 h-full w-full rounded-full object-cover shadow-xl shadow-black transition-opacity duration-1000"
+        [class.opacity-0]="i !== activeIndex()"
+        [class.duration-500]="covers().length === 1"
+        loading="lazy"
+      />
+    }
     <button
       class="absolute bottom-2 right-2 flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-white text-black opacity-0 shadow-xl transition group-hover:translate-y-0 group-hover:opacity-100"
       aria-label="Reproducir playlist"
