@@ -3,6 +3,7 @@
     class="fixed inset-x-0 bottom-0 top-14 z-20 flex flex-col overflow-y-auto bg-black md:absolute md:inset-0"
     [style.background-image]="background()"
     (keydown)="onKeydown($event)"
+    (contextmenu)="$event.preventDefault()"
     tabindex="-1"
     animate.leave="modal-leave"
   >
@@ -11,11 +12,15 @@
         <video
           #bgVideo
           [src]="videoUrl"
-          class="h-full w-full object-cover opacity-40"
+          class="pointer-events-none h-full w-full select-none object-cover opacity-40"
           [muted]="true"
           loop
           playsinline
           autoplay
+          disablepictureinpicture
+          controlslist="nodownload nofullscreen noremoteplayback noplaybackrate"
+          draggable="false"
+          (contextmenu)="$event.preventDefault()"
         ></video>
         <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90"></div>
       </div>

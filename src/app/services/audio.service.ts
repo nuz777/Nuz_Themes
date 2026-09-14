@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import type { Track } from '../models/track';
 import { OfflineStorageService } from './offline-storage.service';
+import { EqualizerService } from './equalizer.service';
 
 type RepeatMode = 'off' | 'all' | 'one';
 
