@@ -167,6 +167,7 @@ export class TracksService {
         album: 'Hold Me in Your Arms',
         cover: '/caratulas/takemetoyourheart.webp',
         audioUrl: '/music/' + encodeURIComponent('Take Me to Your Heart (Autumn Leaves Mix).mp3'),
+        lyricsUrl: '/lyrics/takeme.lrc',
         duration: 0,
       },
       {
@@ -233,6 +234,16 @@ export class TracksService {
         audioUrl: '/music/Make U Whole.mp3',
         duration: 0,
       },
+      {
+        id: 'doom1',
+        title: 'Счастье за горами',
+        artist: 'Панелька',
+        album: 'Nuz',
+        cover: '/caratulas/' + encodeURIComponent('Панелька - Счастье за горами (official music video 2022)  Russian doomer video.jpg'),
+        audioUrl: '/music/' + encodeURIComponent('Панелька - Счастье за горами (official music video 2022)  Russian doomer video.mp3'),
+        lyricsUrl: '/lyrics/doom1.lrc',
+        duration: 0,
+      },
     ];
   }
 
@@ -257,7 +268,7 @@ export class TracksService {
         name: 'nuzthemes',
         description: 'Los temas de Nuz.',
         cover: '/caratulas/' + encodeURIComponent('Snow Strippers - Passionate highs.webp'),
-        trackIds: ['nuz1', 'nuz2', 'nuz3', 'nuz4', 'nuz5', 'nuz6'],
+        trackIds: ['nuz1', 'nuz2', 'nuz3', 'nuz4', 'nuz5', 'nuz6', 'doom1'],
       },
       {
         id: 'snicore',
