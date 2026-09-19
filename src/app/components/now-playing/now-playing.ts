@@ -4,6 +4,7 @@ import {
   effect,
   inject,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { AudioService } from '../../services/audio.service';
 import { AmbientColorService } from '../../services/ambient-color.service';
@@ -17,6 +18,37 @@ import { PipButton } from '../pip-button/pip-button';
   selector: 'app-now-playing',
   imports: [LyricsPanel, DownloadButton, FavoriteButton, PipButton],
   templateUrl: './now-playing.html',
+  encapsulation: ViewEncapsulation.None,
+  styles: [`
+    .np-bar {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 100%;
+      border-radius: 3px 3px 0 0;
+      background: linear-gradient(to top, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.08));
+      transform-origin: bottom;
+      transform: scaleY(var(--min, 0.1));
+      animation: np-bar-beat var(--dur, 700ms) ease-in-out infinite alternate;
+      animation-delay: var(--delay, 0ms);
+      will-change: transform;
+    }
+
+    .np-bars-paused .np-bar {
+      animation-play-state: paused;
+    }
+
+    @keyframes np-bar-beat {
+      from { transform: scaleY(var(--min, 0.1)); }
+      to   { transform: scaleY(var(--h, 0.6)); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .np-bar {
+        animation: none;
+        transform: scaleY(calc(var(--h, 0.6) * 0.6));
+      }
+    }
+  `],
 })
 export class NowPlaying {
   protected readonly audio = inject(AudioService);
@@ -33,6 +65,21 @@ export class NowPlaying {
   protected readonly lyricsError = signal(false);
 
   private static readonly WAVE_COUNT = 42;
+
+  // Barras rítmicas de fondo (solo se muestran en canciones sin letra)
+  protected readonly bgBars = Array.from({ length: 80 }, (_, i) => {
+    const r = (n: number) => {
+      const x = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453;
+      return x - Math.floor(x);
+    };
+    const envelope = 0.7 + 0.3 * Math.sin((i / 79) * Math.PI); // un poco más altas al centro
+    return {
+      max: +(0.4 + r(1) * 0.6 * envelope).toFixed(2),
+      min: +(0.08 + r(2) * 0.12).toFixed(2),
+      dur: Math.round(380 + r(3) * 620), // 380–1000 ms
+      delay: Math.round(r(4) * 1000),
+    };
+  });
 
   constructor() {
     effect(() => {

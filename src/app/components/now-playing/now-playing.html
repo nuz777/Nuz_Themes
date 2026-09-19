@@ -25,8 +25,30 @@
         <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90"></div>
       </div>
     }
-    <div class="flex min-h-0 flex-1 flex-col overflow-hidden" animate.enter="modal-enter">
-    <div class="flex shrink-0 items-center justify-between p-4 pb-2 sm:p-6 sm:pb-2">
+
+
+      <!-- Barras rítmicas de fondo: solo canciones sin letra -->
+    @if (!audio.currentTrack()?.lyricsUrl) {
+      <div
+        aria-hidden="true"
+        class="np-bars pointer-events-none absolute inset-x-0 bottom-0 flex h-[80%] items-end gap-[2px] sm:gap-[3px]"
+        [class.np-bars-paused]="!audio.isPlaying()"
+      >
+        @for (b of bgBars; track $index) {
+          <span
+            class="np-bar"
+            [style.--h]="b.max"
+            [style.--min]="b.min"
+            [style.--dur]="b.dur + 'ms'"
+            [style.--delay]="-b.delay + 'ms'"
+          ></span>
+        }
+      </div>
+    }
+
+
+
+<div class="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden" animate.enter="modal-enter">    <div class="flex shrink-0 items-center justify-between p-4 pb-2 sm:p-6 sm:pb-2">
       <div class="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-neutral-300">
         <span class="flex gap-[2px]">
           <span class="equalizer-bar"></span>
