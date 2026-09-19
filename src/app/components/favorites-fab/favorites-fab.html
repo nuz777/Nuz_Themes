@@ -8,7 +8,10 @@
 
   @if (open()) {
     <div
-      class="fixed bottom-4 right-4 z-50 w-80 max-h-[60dvh] overflow-hidden rounded-2xl border border-white/10 bg-neutral-950/95 shadow-2xl shadow-black backdrop-blur-xl sm:bottom-24 sm:right-6 md:w-96"
+      [style.left.px]="panelPos()?.left"
+      [style.top.px]="panelPos()?.top"
+      [style.bottom.px]="panelPos()?.bottom"
+      class="fixed z-50 w-80 max-h-[60dvh] overflow-hidden rounded-2xl border border-white/10 bg-neutral-950/95 shadow-2xl shadow-black backdrop-blur-xl md:w-96"
       style="animation: modal-enter 240ms ease-out"
     >
       <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
@@ -63,8 +66,13 @@
   }
 
   <button
-    (click)="toggle()"
-    class="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-red-500 text-white shadow-lg shadow-red-500/30 transition hover:scale-110 hover:shadow-red-500/50 sm:bottom-24 sm:right-6"
+    (click)="onFabClick($event)"
+    (pointerdown)="onFabPointerDown($event)"
+    (pointermove)="onFabPointerMove($event)"
+    (pointerup)="onFabPointerUp()"
+    [style.left.px]="pos()?.x"
+    [style.top.px]="pos()?.y"
+    class="fixed bottom-4 right-4 z-50 flex h-12 w-12 cursor-grab touch-none select-none items-center justify-center rounded-full bg-red-500 text-white shadow-lg shadow-red-500/30 transition hover:scale-110 hover:shadow-red-500/50 sm:bottom-24 sm:right-6"
     [class.scale-110]="open()"
     [class.ring-2]="open()"
     [class.ring-white/30]="open()"

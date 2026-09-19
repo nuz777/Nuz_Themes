@@ -17,8 +17,9 @@
   </button>
 
   <div
-    class="overflow-hidden transition-all duration-300 ease-in-out"
+    class="relative overflow-hidden transition-all duration-300 ease-in-out"
     [style.max-height]="showPlayerBar() ? '96px' : '0'"
+    [style.transform]="showPlayerBar() ? 'translateY(0)' : 'translateY(96px)'"
     [class.z-30]="showPlayerBar()"
   >
     <footer class="relative grid h-[90px] shrink-0 grid-cols-[1fr_auto] items-center gap-3 border-t border-neutral-900 bg-black px-3 md:grid-cols-3 md:gap-4 md:px-4">

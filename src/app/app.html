@@ -18,7 +18,8 @@
         </svg>
       </button>
       <button
-        (click)="sidebarOpen.set(!sidebarOpen()); $event.stopPropagation()"
+        #headerMenuToggle
+        (click)="sidebarOpen.set(!sidebarOpen())"
         class="flex h-9 w-9 items-center justify-center rounded-md text-neutral-300 transition hover:bg-neutral-900 hover:text-white"
         aria-label="Abrir menú"
       >
@@ -35,8 +36,9 @@
     }
 
     <button
+      #sidebarToggle
       class="absolute left-1.5 top-1.5 z-[55] hidden h-9 w-9 items-center justify-center rounded-md border border-neutral-800 bg-neutral-950/90 text-neutral-300 shadow-lg shadow-black/40 backdrop-blur transition hover:bg-neutral-900 hover:text-white md:flex"
-      (click)="sidebarCollapsed.set(!sidebarCollapsed()); $event.stopPropagation()"
+      (click)="sidebarCollapsed.set(!sidebarCollapsed())"
       [attr.aria-label]="sidebarCollapsed() ? 'Mostrar menú' : 'Ocultar menú'"
     >
       @if (sidebarCollapsed()) {

@@ -28,13 +28,17 @@ export class App implements OnInit, OnDestroy {
   protected readonly isFullscreen = signal(false);
 
   @ViewChild('sidebarWrapper') private sidebarWrapper?: ElementRef<HTMLElement>;
+  @ViewChild('sidebarToggle') private sidebarToggle?: ElementRef<HTMLElement>;
+  @ViewChild('headerMenuToggle') private headerMenuToggle?: ElementRef<HTMLElement>;
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
     const target = event.target;
     if (!(target instanceof Node)) return;
-    const el = this.sidebarWrapper?.nativeElement;
-    if (!el || el.contains(target)) return;
+    const inside = (ref?: ElementRef<HTMLElement>): boolean => !!ref?.nativeElement.contains(target);
+    if (inside(this.sidebarWrapper)) return;
+    if (inside(this.sidebarToggle)) return;
+    if (inside(this.headerMenuToggle)) return;
     this.sidebarOpen.set(false);
     if (!this.sidebarCollapsed()) this.sidebarCollapsed.set(true);
   }
