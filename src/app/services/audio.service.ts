@@ -132,6 +132,12 @@ export class AudioService {
     this.currentTime.set(time);
   }
 
+  seekBy(seconds: number): void {
+    const duration = this.duration();
+    const target = Math.max(0, this.currentTime() + seconds);
+    this.seek(duration > 0 ? Math.min(duration, target) : target);
+  }
+
   setVolume(value: number): void {
     this.volume.set(value);
     if (this.audio) this.audio.volume = value;
