@@ -19,7 +19,7 @@
   <div
     class="relative overflow-hidden transition-all duration-300 ease-in-out"
     [style.max-height]="showPlayerBar() ? '96px' : '0'"
-    [style.transform]="showPlayerBar() ? 'translateY(0)' : 'translateY(96px)'"
+    [style.transform]="'translateY(0)'"
     [class.z-30]="showPlayerBar()"
   >
     <footer class="relative grid h-[90px] shrink-0 grid-cols-[1fr_auto] items-center gap-3 border-t border-neutral-900 bg-black px-3 md:grid-cols-3 md:gap-4 md:px-4">
@@ -42,8 +42,18 @@
 
   @if (audio.currentTrack(); as track) {
     <div class="flex min-w-0 items-center gap-3">
-      <button (click)="audio.openNowPlaying()" class="shrink-0">
-        <img [src]="track.cover" [alt]="track.title" class="h-10 w-10 rounded object-cover md:h-14 md:w-14" />
+      <button
+        (click)="audio.openNowPlaying()"
+        class="relative h-10 w-10 shrink-0 rounded-full md:h-14 md:w-14"
+        aria-label="Abrir canción actual"
+      >
+        <img
+          [src]="track.cover"
+          [alt]="track.title"
+          [class.record-spin]="audio.isPlaying()"
+          class="h-10 w-10 rounded-full border-4 border-neutral-900 object-cover shadow-lg shadow-black/50 md:h-14 md:w-14"
+        />
+        <span class="pointer-events-none absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/70 bg-white/80 shadow-md"></span>
       </button>
       <div class="min-w-0">
         <button

@@ -101,6 +101,7 @@ export class FavoritesFAB {
   protected playTrack(track: Track): void {
     this.audio.playTrack(track, this.tracks());
     this.audio.openNowPlaying();
+    this.close();
   }
 
   protected formatTime(seconds: number): string {

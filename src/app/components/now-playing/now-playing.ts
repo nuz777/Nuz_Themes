@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { AudioService } from '../../services/audio.service';
 import { AmbientColorService } from '../../services/ambient-color.service';
+import { EQ_BANDS, EQ_PRESETS, EqualizerService } from '../../services/equalizer.service';
 import { LyricsService, type LyricLine } from '../../services/lyrics.service';
 import { LyricsPanel } from '../lyrics-panel/lyrics-panel';
 import { DownloadButton } from '../download-button/download-button';
@@ -48,11 +49,27 @@ import { PipButton } from '../pip-button/pip-button';
         transform: scaleY(calc(var(--h, 0.6) * 0.6));
       }
     }
+
+    .eq-modal-enter,
+    .eq-modal-leave {
+      animation: none;
+    }
+
+    @media (min-width: 768px) {
+      .eq-modal-enter {
+        animation: modal-enter 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      .eq-modal-leave {
+        animation: modal-leave 220ms ease-in both;
+      }
+    }
   `],
 })
 export class NowPlaying {
   protected readonly audio = inject(AudioService);
   private readonly ambient = inject(AmbientColorService);
+  protected readonly equalizer = inject(EqualizerService);
   private readonly lyricsService = inject(LyricsService);
 
   protected readonly background = signal(
@@ -63,6 +80,9 @@ export class NowPlaying {
   protected readonly lyrics = signal<LyricLine[] | null>(null);
   protected readonly lyricsLoading = signal(false);
   protected readonly lyricsError = signal(false);
+  protected readonly equalizerOpen = signal(false);
+  protected readonly eqBands = EQ_BANDS;
+  protected readonly eqPresets = EQ_PRESETS;
 
   private static readonly WAVE_COUNT = 42;
 
@@ -179,6 +199,16 @@ export class NowPlaying {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  protected onEqualizerBandInput(index: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.equalizer.setBand(index, Number(input.value));
+  }
+
+  protected formatGain(index: number): string {
+    const value = this.equalizer.bandValues[index]();
+    return `${value > 0 ? '+' : ''}${value.toFixed(0)} dB`;
   }
 
   protected progressStyle(): string {

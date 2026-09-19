@@ -20,6 +20,7 @@ export class AudioService {
   readonly loading = signal(false);
 
   private readonly offline = inject(OfflineStorageService);
+  private readonly equalizer = inject(EqualizerService);
 
   private audio: HTMLAudioElement | null = null;
   private queueIndex = -1;
@@ -65,6 +66,7 @@ export class AudioService {
 
     this.audio!.src = src;
     this.audio!.load();
+    this.equalizer.resume();
     try {
       await this.audio!.play();
     } catch {
@@ -160,6 +162,7 @@ export class AudioService {
     this.audio = new Audio();
     this.audio.volume = this.volume();
     this.audio.preload = 'metadata';
+    this.equalizer.attach(this.audio);
 
     this.audio.addEventListener('timeupdate', () => {
       this.currentTime.set(this.audio!.currentTime);

@@ -68,7 +68,7 @@
       </button>
     </div>
 
-    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
     @for (track of currentTrackList(); track track.id) {
       <div class="flex min-h-0 flex-1 flex-col items-center px-4 pb-6 sm:px-6 md:flex-row md:items-stretch md:gap-10 md:px-10 md:pb-8">
         <div class="my-auto flex w-full flex-col items-center gap-7 md:min-w-0 md:flex-1">
@@ -126,7 +126,7 @@
               <span>5s</span>
             </button>
             <div
-              class="flex h-16 cursor-pointer items-center gap-[3px] touch-none select-none"
+              class="flex h-15 cursor-pointer items-center gap-[5px] touch-none select-none"
               (pointerdown)="onWavePointerDown($event)"
             >
               @for (bar of waves(); track $index; let i = $index) {
@@ -221,12 +221,101 @@
             }
           </button>
 
-          <app-pip-button />
-          <app-favorite-button [track]="track" />
-          <app-download-button [track]="track" />
-          </div>
+           <button
+             (click)="equalizerOpen.update((open) => !open)"
+             [class.text-white]="equalizerOpen()"
+             [class.text-neutral-300]="!equalizerOpen()"
+             [disabled]="!equalizer.isSupported"
+             class="shrink-0 p-1 text-xs font-black transition hover:scale-110 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+             aria-label="Abrir ecualizador"
+           >
+             EQ
+           </button>
+           <app-pip-button />
+           <app-favorite-button [track]="track" />
+           <app-download-button [track]="track" />
+           </div>
 
-        @if (track.lyricsUrl) {
+         @if (equalizerOpen()) {
+           <div
+             class="fixed inset-0 z-50 flex items-center justify-center p-4"
+             (click)="equalizerOpen.set(false)"
+             animate.enter="eq-modal-enter"
+             animate.leave="eq-modal-leave"
+           >
+           <section
+             class="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-black/35 p-4 shadow-2xl shadow-black/60 backdrop-blur-md"
+             (click)="$event.stopPropagation()"
+           >
+             <div class="mb-4 flex items-center justify-between">
+               <div>
+                 <h3 class="text-sm font-bold uppercase tracking-widest text-white">Ecualizador</h3>
+                 <p class="mt-1 text-xs text-white">Ajusta las frecuencias de la canción</p>
+               </div>
+               <div class="flex items-center gap-2">
+                 <button
+                   (click)="equalizer.reset()"
+                   class="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-neutral-300 transition hover:bg-white/10 hover:text-white"
+                 >
+                   Plano
+                 </button>
+                 <button
+                   (click)="equalizerOpen.set(false)"
+                   class="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-neutral-300 transition hover:bg-white/10 hover:text-white"
+                   aria-label="Cerrar ecualizador"
+                 >
+                   <svg width="16" height="16" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
+                     <path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.41 4.29 19.71 2.88 18.3 9.17 12 2.88 5.7l1.41-1.41 6.3 6.3 6.3-6.3z" />
+                   </svg>
+                 </button>
+               </div>
+             </div>
+
+             <div class="grid grid-cols-6 gap-2">
+               @for (band of eqBands; track band.frequency; let i = $index) {
+                 <label class="flex min-w-0 flex-col items-center gap-2 text-[10px] text-neutral-400">
+                   <span class="tabular-nums text-white">{{ formatGain(i) }}</span>
+                   <input
+                     type="range"
+                     min="-12"
+                     max="12"
+                     step="1"
+                     [value]="equalizer.bandValues[i]()"
+                     (input)="onEqualizerBandInput(i, $event)"
+                     class="h-28 w-2 accent-white [writing-mode:vertical-lr] [direction:rtl]"
+                     [attr.aria-label]="'Banda ' + band.label + ' Hz'"
+                   />
+                   <span class="font-bold text-neutral-200">{{ band.label }}</span>
+                 </label>
+               }
+             </div>
+
+             <div class="mt-4 flex flex-wrap items-center gap-2">
+               @for (preset of eqPresets; track preset.id) {
+                 <button
+                   (click)="equalizer.applyPreset(preset.id)"
+                   [class.bg-white]="equalizer.activePreset() === preset.id"
+                   [class.text-black]="equalizer.activePreset() === preset.id"
+                   [class.bg-white/10]="equalizer.activePreset() !== preset.id"
+                   class="rounded-full px-3 py-1 text-xs font-semibold text-neutral-300 transition hover:bg-white/20 hover:text-white"
+                 >
+                   {{ preset.label }}
+                 </button>
+               }
+               <button
+                 (click)="equalizer.setEnabled(!equalizer.enabled())"
+                 [class.bg-emerald-400/20]="equalizer.enabled()"
+                 [class.text-emerald-200]="equalizer.enabled()"
+                 class="ml-auto rounded-full border border-white/10 px-3 py-1 text-xs font-bold text-neutral-400 transition hover:text-white"
+               >
+                 {{ equalizer.enabled() ? 'Activo' : 'Inactivo' }}
+               </button>
+             </div>
+           </section>
+           </div>
+         }
+
+         @if (track.lyricsUrl) {
           <div class="mt-4 w-full max-w-xl md:hidden">
             <div class="h-64 overflow-y-auto">
               <app-lyrics-panel

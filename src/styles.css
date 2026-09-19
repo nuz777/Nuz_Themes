@@ -12,7 +12,14 @@ html,
 body {
   margin: 0;
   height: 100%;
+  overflow: hidden;
   background-color: #000;
+}
+
+app-root {
+  display: block;
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -94,6 +101,16 @@ body {
 }
 .equalizer-bar:nth-child(3) {
   animation-delay: 0.4s;
+}
+
+.record-spin {
+  animation: record-spin 8s linear infinite;
+}
+
+@keyframes record-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes equalize {
@@ -257,6 +274,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .record-spin {
+    animation: none;
+  }
   .wave-live,
   .glow-breathe {
     animation: none;

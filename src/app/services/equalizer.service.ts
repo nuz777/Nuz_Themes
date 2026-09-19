@@ -12,7 +12,7 @@ export interface EQPreset {
   gains: number[];
 }
 
-const BANDS: EQBand[] = [
+export const EQ_BANDS: EQBand[] = [
   { label: '60', frequency: 60, type: 'lowshelf' },
   { label: '200', frequency: 200, type: 'peaking' },
   { label: '600', frequency: 600, type: 'peaking' },
@@ -31,7 +31,7 @@ export const EQ_PRESETS: EQPreset[] = [
 
 @Injectable({ providedIn: 'root' })
 export class EqualizerService {
-  readonly bandValues = BANDS.map(() => signal(0));
+  readonly bandValues = EQ_BANDS.map(() => signal(0));
   readonly enabled = signal(false);
   readonly activePreset = signal<'flat' | 'custom' | string>('flat');
 
@@ -79,7 +79,7 @@ export class EqualizerService {
     this.ctx = ctx;
     this.source = ctx.createMediaElementSource(element);
 
-    this.filters = BANDS.map((band) => {
+    this.filters = EQ_BANDS.map((band) => {
       const filter = ctx.createBiquadFilter();
       filter.type = band.type;
       filter.frequency.value = band.frequency;
@@ -129,6 +129,10 @@ export class EqualizerService {
     this.filters.forEach((filter, i) => {
       filter.gain.setTargetAtTime(value ? this.bandValues[i]() : 0, this.ctx!.currentTime, 0.01);
     });
+  }
+
+  resume(): void {
+    void this.ctx?.resume();
   }
 
   setVolume(value: number): void {
