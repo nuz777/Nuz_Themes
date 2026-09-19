@@ -3,6 +3,7 @@ import { FavoritesService } from '../../services/favorites.service';
 import { TracksService } from '../../services/tracks.service';
 import { AudioService } from '../../services/audio.service';
 import type { Track } from '../../models/track';
+import { DurationService } from '../../services/duration.service';
 
 const FAB_SIZE = 48;
 
@@ -15,6 +16,7 @@ export class FavoritesFAB {
   protected readonly favorites = inject(FavoritesService);
   private readonly tracksService = inject(TracksService);
   protected readonly audio = inject(AudioService);
+  protected readonly durationService = inject(DurationService);
   protected readonly open = signal(false);
 
   protected readonly pos = signal<{ x: number; y: number } | null>(null);
@@ -28,6 +30,10 @@ export class FavoritesFAB {
       .map((id) => this.tracksService.getTrack(id))
       .filter((t): t is Track => t != null);
   });
+
+  constructor() {
+    this.durationService.preload(this.tracks().map((t) => ({ id: t.id, audioUrl: t.audioUrl })));
+  }
 
   protected toggle(): void {
     this.open.set(!this.open());

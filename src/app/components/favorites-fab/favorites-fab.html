@@ -57,7 +57,7 @@
               <span class="block truncate text-xs text-neutral-400">{{ track.artist }}</span>
             </div>
             <span class="shrink-0 text-xs tabular-nums text-neutral-500">
-              {{ formatTime(track.duration) }}
+              {{ formatTime(durationService.durationOf(track.id)) }}
             </span>
           </button>
         }
