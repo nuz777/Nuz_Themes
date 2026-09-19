@@ -31,7 +31,7 @@
     @if (!audio.currentTrack()?.lyricsUrl) {
       <div
         aria-hidden="true"
-        class="np-bars pointer-events-none absolute inset-x-0 bottom-0 flex h-[80%] items-end gap-[2px] sm:gap-[3px]"
+        class="np-bars pointer-events-none absolute inset-x-0 bottom-0 hidden h-[80%] items-end gap-[2px] sm:flex sm:gap-[3px]"
         [class.np-bars-paused]="!audio.isPlaying()"
       >
         @for (b of bgBars; track $index) {
