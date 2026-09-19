@@ -6,6 +6,7 @@ import type { Playlist } from '../../services/tracks.service';
   selector: 'app-sidebar',
   imports: [RouterLink, RouterLinkActive],
   templateUrl: './sidebar.html',
+  host: { class: 'block h-full min-h-0' },
 })
 export class Sidebar {
   readonly playlists = input<Playlist[]>([]);

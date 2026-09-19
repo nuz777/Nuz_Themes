@@ -1,6 +1,6 @@
 @if (audio.showNowPlaying()) {
   <div
-    class="fixed inset-x-0 bottom-0 top-14 z-20 flex flex-col overflow-y-auto bg-black md:absolute md:inset-0"
+    class="fixed inset-x-0 bottom-0 top-14 z-20 flex flex-col overflow-hidden bg-black md:inset-0"
     [style.background-image]="background()"
     (keydown)="onKeydown($event)"
     (contextmenu)="$event.preventDefault()"
@@ -25,8 +25,8 @@
         <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90"></div>
       </div>
     }
-    <div class="flex min-h-full flex-col" animate.enter="modal-enter">
-    <div class="flex items-center justify-between p-4 pb-2 sm:p-6 sm:pb-2">
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden" animate.enter="modal-enter">
+    <div class="flex shrink-0 items-center justify-between p-4 pb-2 sm:p-6 sm:pb-2">
       <div class="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-neutral-300">
         <span class="flex gap-[2px]">
           <span class="equalizer-bar"></span>
@@ -46,6 +46,7 @@
       </button>
     </div>
 
+    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
     @for (track of currentTrackList(); track track.id) {
       <div class="flex min-h-0 flex-1 flex-col items-center px-4 pb-6 sm:px-6 md:flex-row md:items-stretch md:gap-10 md:px-10 md:pb-8">
         <div class="my-auto flex w-full flex-col items-center gap-7 md:min-w-0 md:flex-1">
@@ -213,6 +214,7 @@
         No hay ninguna canción en reproducción.
       </div>
     }
+    </div>
     </div>
   </div>
 }

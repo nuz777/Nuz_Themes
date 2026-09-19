@@ -1,4 +1,27 @@
-<footer class="relative grid h-[90px] shrink-0 grid-cols-[1fr_auto] items-center gap-3 border-t border-neutral-900 bg-black px-3 md:grid-cols-3 md:gap-4 md:px-4">
+<div class="relative">
+  <button
+    (click)="showPlayerBar.update(v => !v)"
+    class="absolute right-3 -top-6 z-[60] flex h-9 items-center justify-center gap-1 rounded-t-lg border border-b-0 border-neutral-800 bg-neutral-950 text-neutral-300 shadow-lg shadow-black/40 transition hover:bg-neutral-900 hover:text-white px-3"
+    [attr.aria-label]="showPlayerBar() ? 'Ocultar reproductor' : 'Mostrar reproductor'"
+  >
+    <span class="text-[10px] font-semibold uppercase tracking-widest">{{ showPlayerBar() ? 'Ocultar player' : 'Mostrar player' }}</span>
+    @if (showPlayerBar()) {
+      <svg width="16" height="16" viewBox="0 0 24 24" class="fill-current">
+        <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+      </svg>
+    } @else {
+      <svg width="16" height="16" viewBox="0 0 24 24" class="fill-current">
+        <path d="m7.41 15.41 4.59-4.58 4.59 4.58L18 14l-6-6-6 6 1.41 1.41z" />
+      </svg>
+    }
+  </button>
+
+  <div
+    class="overflow-hidden transition-all duration-300 ease-in-out"
+    [style.max-height]="showPlayerBar() ? '96px' : '0'"
+    [class.z-30]="showPlayerBar()"
+  >
+    <footer class="relative grid h-[90px] shrink-0 grid-cols-[1fr_auto] items-center gap-3 border-t border-neutral-900 bg-black px-3 md:grid-cols-3 md:gap-4 md:px-4">
   <input
     type="range"
     min="0"
@@ -151,3 +174,5 @@
     />
   </div>
 </footer>
+  </div>
+</div>

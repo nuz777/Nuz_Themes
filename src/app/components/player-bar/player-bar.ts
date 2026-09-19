@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { AudioService } from '../../services/audio.service';
 import { DurationService } from '../../services/duration.service';
 import { FavoriteButton } from '../favorite-button/favorite-button';
@@ -11,6 +11,7 @@ import { FavoriteButton } from '../favorite-button/favorite-button';
 export class PlayerBar {
   protected readonly audio = inject(AudioService);
   private readonly durations = inject(DurationService);
+  protected readonly showPlayerBar = signal(true);
 
   protected formatTime(seconds: number): string {
     if (!Number.isFinite(seconds) || seconds < 0) return '0:00';

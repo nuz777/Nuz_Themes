@@ -18,7 +18,7 @@
         </svg>
       </button>
       <button
-        (click)="sidebarOpen.set(!sidebarOpen())"
+        (click)="sidebarOpen.set(!sidebarOpen()); $event.stopPropagation()"
         class="flex h-9 w-9 items-center justify-center rounded-md text-neutral-300 transition hover:bg-neutral-900 hover:text-white"
         aria-label="Abrir menú"
       >
@@ -29,20 +29,39 @@
     </div>
   </header>
 
-  <div class="flex min-h-0 flex-1 gap-2 p-2 pb-0">
+  <div class="relative flex min-h-0 flex-1 gap-2 p-2 pb-0">
     @if (sidebarOpen()) {
       <div class="fixed inset-0 z-30 bg-black/70 md:hidden" (click)="sidebarOpen.set(false)"></div>
     }
 
+    <button
+      class="absolute left-1.5 top-1.5 z-[55] hidden h-9 w-9 items-center justify-center rounded-md border border-neutral-800 bg-neutral-950/90 text-neutral-300 shadow-lg shadow-black/40 backdrop-blur transition hover:bg-neutral-900 hover:text-white md:flex"
+      (click)="sidebarCollapsed.set(!sidebarCollapsed()); $event.stopPropagation()"
+      [attr.aria-label]="sidebarCollapsed() ? 'Mostrar menú' : 'Ocultar menú'"
+    >
+      @if (sidebarCollapsed()) {
+        <svg width="20" height="20" viewBox="0 0 24 24" class="fill-current">
+          <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z" />
+        </svg>
+      } @else {
+        <svg width="20" height="20" viewBox="0 0 24 24" class="fill-current">
+          <path d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+        </svg>
+      }
+    </button>
+
     <div
-      class="fixed inset-y-0 left-0 z-40 w-72 bg-neutral-950 transition-transform duration-300 md:static md:z-auto md:translate-x-0 md:bg-transparent"
+      #sidebarWrapper
+      class="fixed inset-y-0 left-0 z-40 w-72 overflow-hidden bg-neutral-950 transition-transform duration-300 md:relative md:z-40 md:translate-x-0 md:bg-transparent md:transition-all"
       [class.-translate-x-full]="!sidebarOpen()"
+      [class.md:w-0]="sidebarCollapsed()"
+      [class.md:w-72]="!sidebarCollapsed()"
     >
       <app-sidebar [playlists]="tracksService.playlists()" />
     </div>
 
     <main
-      class="relative min-w-0 flex-1 rounded-lg bg-neutral-950"
+      class="relative min-w-0 min-h-0 flex-1 rounded-lg bg-neutral-950"
       [style.overflow]="audio.showNowPlaying() ? 'hidden' : 'auto'"
     >
       <div class="h-full" [class.invisible]="audio.showNowPlaying()">

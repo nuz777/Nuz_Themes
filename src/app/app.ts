@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, inject, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
 import { Router, RouterOutlet, RouterLink, NavigationStart } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Sidebar } from './components/sidebar/sidebar';
@@ -24,7 +24,20 @@ export class App implements OnInit, OnDestroy {
   private readonly mediaSession = inject(MediaSessionService);
 
   protected readonly sidebarOpen = signal(false);
+  protected readonly sidebarCollapsed = signal(false);
   protected readonly isFullscreen = signal(false);
+
+  @ViewChild('sidebarWrapper') private sidebarWrapper?: ElementRef<HTMLElement>;
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target;
+    if (!(target instanceof Node)) return;
+    const el = this.sidebarWrapper?.nativeElement;
+    if (!el || el.contains(target)) return;
+    this.sidebarOpen.set(false);
+    if (!this.sidebarCollapsed()) this.sidebarCollapsed.set(true);
+  }
 
   private readonly routerSub = inject(Router).events.subscribe((event) => {
     if (event instanceof NavigationStart) {
