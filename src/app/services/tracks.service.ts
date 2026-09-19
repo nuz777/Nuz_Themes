@@ -208,6 +208,15 @@ export class TracksService {
         duration: 0,
       },
       {
+        id: 'anim5',
+        title: 'Alors on danse',
+        artist: 'Indila',
+        album: 'Animation',
+        cover: '/caratulas/Alors on danse.png',
+        audioUrl: '/music/Alors on danse (Radio Edit).mp3',
+        duration: 0,
+      },
+      {
         id: 'nuz4',
         title: 'Russian Car Driver',
         artist: 'OST',
@@ -254,7 +263,7 @@ export class TracksService {
         name: 'animation',
         description: 'Música de tus animaciones.',
         cover: '/caratulas/image.webp',
-        trackIds: ['local1', 'anim1', 'anim2', 'anim3', 'anim4'],
+        trackIds: ['local1', 'anim1', 'anim2', 'anim3', 'anim4', 'anim5'],
       },
       {
         id: 'phonk',
