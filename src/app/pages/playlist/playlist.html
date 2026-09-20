@@ -48,7 +48,7 @@
       </button>
     </div>
 
-   <app-track-list [tracks]="tracks()" />
+    <app-track-list [tracks]="tracks()" [playlistId]="playlist.userCreated ? playlist.id : null" />
   </div>
 
   @if (emptyPromptOpen()) {

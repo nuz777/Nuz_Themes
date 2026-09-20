@@ -85,6 +85,19 @@ export class TracksService {
     return true;
   }
 
+  removeTrackFromPlaylist(playlistId: string, trackId: string): boolean {
+    let removed = false;
+    this.playlists.update((playlists) => playlists.map((playlist) => {
+      if (!playlist.userCreated || playlist.id !== playlistId || !playlist.trackIds.includes(trackId)) {
+        return playlist;
+      }
+      removed = true;
+      return { ...playlist, trackIds: playlist.trackIds.filter((id) => id !== trackId) };
+    }));
+    if (removed) this.persistUserPlaylists();
+    return removed;
+  }
+
   getPlaylistTracks(id: string): Track[] {
     const playlist = this.getPlaylist(id);
     if (!playlist) return [];
