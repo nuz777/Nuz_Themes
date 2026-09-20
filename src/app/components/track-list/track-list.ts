@@ -4,10 +4,11 @@ import { AudioService } from '../../services/audio.service';
 import { DurationService } from '../../services/duration.service';
 import { DownloadButton } from '../download-button/download-button';
 import { FavoriteButton } from '../favorite-button/favorite-button';
+import { AddToPlaylist } from '../add-to-playlist/add-to-playlist';
 
 @Component({
   selector: 'app-track-list',
-  imports: [DownloadButton, FavoriteButton],
+  imports: [DownloadButton, FavoriteButton, AddToPlaylist],
   templateUrl: './track-list.html',
 })
 export class TrackList {

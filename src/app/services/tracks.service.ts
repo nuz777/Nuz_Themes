@@ -7,6 +7,7 @@ export interface Playlist {
   description: string;
   cover: string;
   trackIds: string[];
+  userCreated?: boolean;
 }
 
 const cover = (seed: string) => `https://picsum.photos/seed/${seed}/300/300?grayscale`;
@@ -18,7 +19,7 @@ export class TracksService {
 
   constructor() {
     this.tracks.set(this.buildTracks());
-    this.playlists.set(this.buildPlaylists());
+    this.playlists.set([...this.buildPlaylists(), ...this.readUserPlaylists()]);
     this.preloadCovers();
   }
 
@@ -41,12 +42,81 @@ export class TracksService {
     return this.playlists().find((p) => p.id === id);
   }
 
+  getUserPlaylists(): Playlist[] {
+    return this.playlists().filter((playlist) => playlist.userCreated);
+  }
+
+  createPlaylist(name: string): Playlist | null {
+    const cleanName = name.trim();
+    if (!cleanName) return null;
+
+    const playlist: Playlist = {
+      id: `user-${Date.now()}`,
+      name: cleanName,
+      description: 'Playlist creada por ti.',
+      cover: '/caratulas/image.webp',
+      trackIds: [],
+      userCreated: true,
+    };
+    this.playlists.update((playlists) => [...playlists, playlist]);
+    this.persistUserPlaylists();
+    return playlist;
+  }
+
+  addTrackToPlaylist(playlistId: string, trackId: string): boolean {
+    let added = false;
+    this.playlists.update((playlists) => playlists.map((playlist) => {
+      if (playlist.id !== playlistId || !playlist.userCreated || playlist.trackIds.includes(trackId)) {
+        return playlist;
+      }
+      added = true;
+      return { ...playlist, trackIds: [...playlist.trackIds, trackId] };
+    }));
+    if (added) this.persistUserPlaylists();
+    return added;
+  }
+
+  deletePlaylist(playlistId: string): boolean {
+    const playlist = this.getPlaylist(playlistId);
+    if (!playlist?.userCreated) return false;
+
+    this.playlists.update((playlists) => playlists.filter((item) => item.id !== playlistId));
+    this.persistUserPlaylists();
+    return true;
+  }
+
   getPlaylistTracks(id: string): Track[] {
     const playlist = this.getPlaylist(id);
     if (!playlist) return [];
     return playlist.trackIds
       .map((tid) => this.getTrack(tid))
       .filter((t): t is Track => !!t);
+  }
+
+  private readUserPlaylists(): Playlist[] {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = window.localStorage.getItem('nuz-user-playlists');
+      if (!raw) return [];
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((playlist): playlist is Playlist => {
+        if (!playlist || typeof playlist !== 'object') return false;
+        const item = playlist as Partial<Playlist>;
+        return item.userCreated === true
+          && typeof item.id === 'string'
+          && typeof item.name === 'string'
+          && Array.isArray(item.trackIds);
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  private persistUserPlaylists(): void {
+    if (typeof window === 'undefined') return;
+    const userPlaylists = this.getUserPlaylists();
+    window.localStorage.setItem('nuz-user-playlists', JSON.stringify(userPlaylists));
   }
 
   private buildTracks(): Track[] {
@@ -134,6 +204,24 @@ export class TracksService {
         duration: 0,
       },
       {
+        id: 'sni4',
+        title: 'SMOKE IT OFF!',
+        artist: 'Lumi Athena ft. jnhygs',
+        album: 'Lumi Athena',
+        cover: '/caratulas/smokeofflumiathena.png',
+        audioUrl: '/music/' + encodeURIComponent('Lumi Athena - SMOKE IT OFF! ft. jnhygs.mp3'),
+        duration: 0,
+      },
+      {
+        id: 'sni5',
+        title: 'One Night in Berlin',
+        artist: 'Baby Jane',
+        album: 'Snicore',
+        cover: '/caratulas/babyjane.png',
+        audioUrl: '/music/' + encodeURIComponent('Baby Jane - One Night in Berlin (Nightcore).mp3'),
+        duration: 0,
+      },
+      {
         id: 'ph1',
         title: 'AUTOMOTIVO ANTI-CELESTIAL',
         artist: 'Nuz',
@@ -161,6 +249,33 @@ export class TracksService {
         duration: 0,
       },
       {
+        id: 'ph4',
+        title: 'MONTAGEM DIMENSION',
+        artist: 'Nuz',
+        album: 'Phonk',
+        cover: '/caratulas/montagemdimesion.png',
+        audioUrl: '/music/MONTAGEM DIMENSION.mp3',
+        duration: 0,
+      },
+      {
+        id: 'ph5',
+        title: 'Baixo Cristal',
+        artist: 'Teclas',
+        album: 'Phonk',
+        cover: '/caratulas/baixocristal.png',
+        audioUrl: '/music/Baixo Cristal Teclas.mp3',
+        duration: 0,
+      },
+      {
+        id: 'ph6',
+        title: 'OGAME',
+        artist: 'Nuz',
+        album: 'Phonk',
+        cover: '/caratulas/agome.png',
+        audioUrl: '/music/OGAME.mp3',
+        duration: 0,
+      },
+      {
         id: 'classic3',
         title: 'Take Me to Your Heart',
         artist: 'Rick Astley',
@@ -168,6 +283,15 @@ export class TracksService {
         cover: '/caratulas/takemetoyourheart.webp',
         audioUrl: '/music/' + encodeURIComponent('Take Me to Your Heart (Autumn Leaves Mix).mp3'),
         lyricsUrl: '/lyrics/takeme.lrc',
+        duration: 0,
+      },
+      {
+        id: 'classic4',
+        title: 'Gyoretsu no dekiru Eirin Shinryojo',
+        artist: 'Eirin Shinryojo',
+        album: 'Classic',
+        cover: '/caratulas/' + encodeURIComponent('Gyoretsu no dekiru Eirin Shinryojo.png'),
+        audioUrl: '/caratulas/' + encodeURIComponent('Gyoretsu no dekiru Eirin Shinryojo.mp3'),
         duration: 0,
       },
       {
@@ -217,6 +341,15 @@ export class TracksService {
         duration: 0,
       },
       {
+        id: 'anim6',
+        title: 'Hey Kids',
+        artist: 'Molina',
+        album: 'Animation',
+        cover: '/caratulas/heykids.png',
+        audioUrl: '/music/' + encodeURIComponent('Molina - Hey Kids [Traducción al español].mp3'),
+        duration: 0,
+      },
+      {
         id: 'nuz4',
         title: 'Russian Car Driver',
         artist: 'OST',
@@ -263,14 +396,14 @@ export class TracksService {
         name: 'animation',
         description: 'Música de tus animaciones.',
         cover: '/caratulas/image.webp',
-        trackIds: ['local1', 'anim1', 'anim2', 'anim3', 'anim4', 'anim5'],
+        trackIds: ['local1', 'anim1', 'anim2', 'anim3', 'anim4', 'anim5', 'anim6'],
       },
       {
         id: 'phonk',
         name: 'phonk',
         description: 'Phonk crudo y pesado.',
         cover: '/caratulas/AUTOMOTIVOANTI-CELESTIAL .webp',
-        trackIds: ['ph1', 'ph2', 'ph3'],
+        trackIds: ['ph1', 'ph2', 'ph3', 'ph4', 'ph5', 'ph6'],
       },
       {
         id: 'nuzthemes',
@@ -284,14 +417,14 @@ export class TracksService {
         name: 'snicore',
         description: 'Ritmos rápidos y agresivos.',
         cover: '/caratulas/kurxedEzxmelards.webp',
-        trackIds: ['sni1', 'sni2', 'sni3'],
+        trackIds: ['sni1', 'sni2', 'sni3', 'sni4', 'sni5'],
       },
       {
         id: 'clasiccthemes',
         name: 'clasiccthemes',
         description: 'Clásicos de siempre.',
         cover: '/caratulas/' + encodeURIComponent('GoldSpandau Ballet .webp'),
-        trackIds: ['classic1', 'classic2', 'classic3'],
+        trackIds: ['classic1', 'classic2', 'classic3', 'classic4'],
       },
     ];
   }

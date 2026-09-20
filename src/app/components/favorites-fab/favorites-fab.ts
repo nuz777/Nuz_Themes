@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { FavoritesService } from '../../services/favorites.service';
 import { TracksService } from '../../services/tracks.service';
 import { AudioService } from '../../services/audio.service';
@@ -18,11 +18,13 @@ export class FavoritesFAB {
   protected readonly audio = inject(AudioService);
   protected readonly durationService = inject(DurationService);
   protected readonly open = signal(false);
+  protected readonly heartPop = signal(false);
 
   protected readonly pos = signal<{ x: number; y: number } | null>(null);
   protected readonly panelPos = signal<{ left: number; top: number | null; bottom: number | null } | null>(null);
   private dragStart: { px: number; py: number; sx: number; sy: number } | null = null;
   private dragged = false;
+  private previousFavoriteCount = 0;
 
   protected readonly tracks = computed(() => {
     const ids = [...this.favorites.ids()];
@@ -32,7 +34,20 @@ export class FavoritesFAB {
   });
 
   constructor() {
+    this.previousFavoriteCount = this.favorites.count();
     this.durationService.preload(this.tracks().map((t) => ({ id: t.id, audioUrl: t.audioUrl })));
+
+    effect(() => {
+      const count = this.favorites.count();
+      if (typeof window !== 'undefined' && count > this.previousFavoriteCount) {
+        this.heartPop.set(false);
+        window.setTimeout(() => {
+          this.heartPop.set(true);
+          window.setTimeout(() => this.heartPop.set(false), 500);
+        }, 0);
+      }
+      this.previousFavoriteCount = count;
+    });
   }
 
   protected toggle(): void {
