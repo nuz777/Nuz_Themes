@@ -32,7 +32,7 @@ export class AddToPlaylist {
     if (!playlist) return;
     const added = this.tracksService.addTrackToPlaylist(playlistId, this.track().id);
     if (added) {
-      this.toast.show(`Guardado en "${playlist.name}"`, 'success', this.track().cover, 'Playlist actualizada');
+      this.toast.show(`Guardado en "${playlist.name}"`, 'success', this.track().cover, 'Playlist actualizada', `/playlist/${playlist.id}`);
     }
     this.open.set(false);
   }
@@ -51,7 +51,7 @@ export class AddToPlaylist {
     const playlist = this.tracksService.createPlaylist(input.value);
     if (!playlist) return;
     this.tracksService.addTrackToPlaylist(playlist.id, this.track().id);
-    this.toast.show(`Guardado en "${playlist.name}"`, 'success', this.track().cover, 'Playlist creada');
+    this.toast.show(`Guardado en "${playlist.name}"`, 'success', this.track().cover, 'Playlist creada', `/playlist/${playlist.id}`);
     this.open.set(false);
   }
 }

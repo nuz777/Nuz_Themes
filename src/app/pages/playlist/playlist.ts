@@ -1,4 +1,4 @@
-import { Component, inject, input, computed, signal, OnDestroy } from '@angular/core';
+import { Component, effect, inject, input, computed, signal, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AudioService } from '../../services/audio.service';
 import { TracksService } from '../../services/tracks.service';
@@ -10,6 +10,22 @@ const ROTATE_MS = 3500;
   selector: 'app-playlist-page',
   imports: [TrackList],
   templateUrl: './playlist.html',
+  styles: [`
+    .playlist-modal-enter,
+    .playlist-modal-leave {
+      animation: none;
+    }
+
+    @media (min-width: 768px) {
+      .playlist-modal-enter {
+        animation: modal-enter 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      .playlist-modal-leave {
+        animation: modal-leave 220ms ease-in both;
+      }
+    }
+  `],
 })
 export class PlaylistPage implements OnDestroy {
   readonly id = input.required<string>();
@@ -17,6 +33,7 @@ export class PlaylistPage implements OnDestroy {
   protected readonly audio = inject(AudioService);
   private readonly router = inject(Router);
   protected readonly deleteConfirmOpen = signal(false);
+  protected readonly emptyPromptOpen = signal(false);
 
   protected readonly playlist = computed(() => this.tracksService.getPlaylist(this.id()));
   protected readonly tracks = computed(() => this.tracksService.getPlaylistTracks(this.id()));
@@ -31,6 +48,13 @@ export class PlaylistPage implements OnDestroy {
   private readonly timer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
+    effect(() => {
+      const playlist = this.playlist();
+      if (playlist?.userCreated && this.tracks().length === 0) {
+        this.emptyPromptOpen.set(true);
+      }
+    });
+
     if (typeof window === 'undefined') return;
 
     this.timer = setInterval(() => {
@@ -65,5 +89,14 @@ export class PlaylistPage implements OnDestroy {
     this.tracksService.deletePlaylist(current.id);
     this.deleteConfirmOpen.set(false);
     void this.router.navigate(['/playlists']);
+  }
+
+  protected closeEmptyPrompt(): void {
+    this.emptyPromptOpen.set(false);
+  }
+
+  protected exploreMusic(): void {
+    this.emptyPromptOpen.set(false);
+    void this.router.navigate(['/playlist', 'phonk']);
   }
 }

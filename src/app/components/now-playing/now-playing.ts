@@ -64,6 +64,31 @@ import { PipButton } from '../pip-button/pip-button';
         animation: modal-leave 220ms ease-in both;
       }
     }
+
+    .mobile-lyrics-enter,
+    .mobile-lyrics-leave {
+      animation: none;
+    }
+
+    @media (max-width: 767px) {
+      .mobile-lyrics-enter {
+        animation: mobile-lyrics-enter 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      .mobile-lyrics-leave {
+        animation: mobile-lyrics-leave 260ms ease-in both;
+      }
+    }
+
+    @keyframes mobile-lyrics-enter {
+      from { opacity: 0; transform: translateY(100%); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes mobile-lyrics-leave {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(100%); }
+    }
   `],
 })
 export class NowPlaying {
@@ -80,6 +105,7 @@ export class NowPlaying {
   protected readonly lyrics = signal<LyricLine[] | null>(null);
   protected readonly lyricsLoading = signal(false);
   protected readonly lyricsError = signal(false);
+  protected readonly mobileLyricsOpen = signal(false);
   protected readonly equalizerOpen = signal(false);
   protected readonly eqBands = EQ_BANDS;
   protected readonly eqPresets = EQ_PRESETS;
@@ -104,6 +130,7 @@ export class NowPlaying {
   constructor() {
     effect(() => {
       const track = this.audio.currentTrack();
+      this.mobileLyricsOpen.set(false);
       if (track) {
         void this.ambient.getGradient(track.cover).then((g) => this.background.set(g));
         void this.ambient.getColor(track.cover).then((c) => this.glowColor.set(c));
@@ -276,6 +303,24 @@ export class NowPlaying {
         this.audio.prev();
       }
     }
+  }
+
+  protected onMobileLyricsTouchStart(event: TouchEvent): void {
+    if (!this.isMobileViewport() || !this.audio.currentTrack()?.lyricsUrl) return;
+    this.swipeStartX = event.touches[0].clientX;
+    this.swipeStartY = event.touches[0].clientY;
+  }
+
+  protected onMobileLyricsTouchEnd(event: TouchEvent): void {
+    if (!this.isMobileViewport() || !this.audio.currentTrack()?.lyricsUrl) return;
+    const dx = event.changedTouches[0].clientX - this.swipeStartX;
+    const dy = event.changedTouches[0].clientY - this.swipeStartY;
+    if (Math.abs(dy) < 50 || Math.abs(dy) < Math.abs(dx) * 1.2) return;
+    this.mobileLyricsOpen.set(dy < 0);
+  }
+
+  private isMobileViewport(): boolean {
+    return typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
   }
 
   protected onCoverWheel(event: WheelEvent): void {

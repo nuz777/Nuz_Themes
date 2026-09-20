@@ -291,7 +291,7 @@ export class TracksService {
         artist: 'Eirin Shinryojo',
         album: 'Classic',
         cover: '/caratulas/' + encodeURIComponent('Gyoretsu no dekiru Eirin Shinryojo.png'),
-        audioUrl: '/caratulas/' + encodeURIComponent('Gyoretsu no dekiru Eirin Shinryojo.mp3'),
+        audioUrl: '/music/' + encodeURIComponent('Gyoretsu no dekiru Eirin Shinryojo.mp3'),
         duration: 0,
       },
       {

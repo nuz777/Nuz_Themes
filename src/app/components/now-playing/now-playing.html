@@ -72,7 +72,12 @@
     @for (track of currentTrackList(); track track.id) {
       <div class="flex min-h-0 flex-1 flex-col items-center px-4 pb-6 sm:px-6 md:flex-row md:items-stretch md:gap-10 md:px-10 md:pb-8">
         <div class="my-auto flex w-full flex-col items-center gap-7 md:min-w-0 md:flex-1">
-          <div class="flex flex-col items-center gap-7" animate.enter="track-enter">
+          <div
+            class="flex flex-col items-center gap-7"
+            animate.enter="track-enter"
+            (touchstart)="onMobileLyricsTouchStart($event)"
+            (touchend)="onMobileLyricsTouchEnd($event)"
+          >
           <div
             class="relative select-none touch-pan-y"
             (touchstart)="onCoverTouchStart($event)"
@@ -105,6 +110,17 @@
           <div class="w-full max-w-xl text-center">
             <h2 class="truncate text-2xl font-black text-white sm:text-3xl">{{ track.title }}</h2>
             <p class="mt-1 truncate text-base font-semibold text-neutral-200 sm:text-lg">{{ track.artist }}</p>
+            @if (track.lyricsUrl && !mobileLyricsOpen()) {
+              <button
+                (click)="mobileLyricsOpen.set(true)"
+                class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-neutral-300 transition hover:bg-white/10 hover:text-white md:hidden"
+              >
+                <span>Desliza hacia arriba para ver la letra</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
+                  <path d="m7.41 15.41 4.59-4.58 4.59 4.58L18 14l-6-6-6 6z" />
+                </svg>
+              </button>
+            }
             @if (audio.playbackError()) {
               <p class="mx-auto mt-3 max-w-sm rounded-md bg-red-900/40 px-3 py-2 text-sm text-red-200">
                 No se pudo reproducir. Si estás sin conexión, descargá la canción para poder escucharla.
@@ -315,18 +331,40 @@
            </div>
          }
 
-         @if (track.lyricsUrl) {
-          <div class="mt-4 w-full max-w-xl md:hidden">
-            <div class="h-64 overflow-y-auto">
-              <app-lyrics-panel
-                [lines]="lyrics()"
-                [activeIndex]="activeLyricIndex()"
-                [loading]="lyricsLoading()"
-                [error]="lyricsError()"
-              />
-            </div>
-          </div>
-        }
+         @if (track.lyricsUrl && mobileLyricsOpen()) {
+           <div
+             class="fixed inset-x-0 bottom-0 top-14 z-30 flex flex-col bg-black/65 md:hidden"
+             [style.background-image]="background()"
+             animate.enter="mobile-lyrics-enter"
+             animate.leave="mobile-lyrics-leave"
+             (touchstart)="onMobileLyricsTouchStart($event)"
+             (touchend)="onMobileLyricsTouchEnd($event)"
+           >
+             <div class="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
+               <div>
+                 <p class="text-xs font-bold uppercase tracking-widest text-neutral-400">Letra</p>
+                 <h2 class="mt-1 truncate text-lg font-black text-white">{{ track.title }}</h2>
+               </div>
+               <button
+                 (click)="mobileLyricsOpen.set(false)"
+                 class="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-neutral-300 transition hover:bg-white/10 hover:text-white"
+                 aria-label="Cerrar letra"
+               >
+                 <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
+                   <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
+                 </svg>
+               </button>
+             </div>
+             <div class="min-h-0 flex-1 overflow-y-auto px-5 py-6">
+               <app-lyrics-panel
+                 [lines]="lyrics()"
+                 [activeIndex]="activeLyricIndex()"
+                 [loading]="lyricsLoading()"
+                 [error]="lyricsError()"
+               />
+             </div>
+           </div>
+         }
         </div>
 
       @if (track.lyricsUrl) {

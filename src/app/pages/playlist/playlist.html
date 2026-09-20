@@ -51,10 +51,54 @@
    <app-track-list [tracks]="tracks()" />
   </div>
 
+  @if (emptyPromptOpen()) {
+    <div
+      class="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      (click)="closeEmptyPrompt()"
+      animate.enter="playlist-modal-enter"
+      animate.leave="playlist-modal-leave"
+    >
+      <div
+        class="w-full max-w-sm rounded-2xl border border-white/10 bg-neutral-950 p-5 shadow-2xl shadow-black"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="mb-5 flex items-start gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-neutral-200">
+            <svg width="20" height="20" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-lg font-black text-white">Bro, tu playlist está vacía</h2>
+            <p class="mt-1 text-sm leading-relaxed text-neutral-400">
+              Explora algunas canciones y empieza a llenarla.
+            </p>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button
+            (click)="closeEmptyPrompt()"
+            class="rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-neutral-300 transition hover:bg-white/10 hover:text-white"
+          >
+            Más tarde
+          </button>
+          <button
+            (click)="exploreMusic()"
+            class="rounded-lg bg-white px-4 py-2 text-sm font-bold text-black transition hover:bg-neutral-200"
+          >
+            Sí, explorar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   @if (deleteConfirmOpen()) {
     <div
       class="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       (click)="cancelDeletePlaylist()"
+      animate.enter="playlist-modal-enter"
+      animate.leave="playlist-modal-leave"
     >
       <div
         class="w-full max-w-sm rounded-2xl border border-white/10 bg-neutral-950 p-5 shadow-2xl shadow-black"

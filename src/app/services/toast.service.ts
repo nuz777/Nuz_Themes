@@ -5,6 +5,7 @@ export interface Toast {
   text: string;
   kind: 'success' | 'error';
   cover?: string;
+  route?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -13,9 +14,9 @@ export class ToastService {
 
   private nextId = 0;
 
-  show(text: string, kind: Toast['kind'] = 'success', cover?: string, title?: string): void {
+  show(text: string, kind: Toast['kind'] = 'success', cover?: string, title?: string, route?: string): void {
     const id = ++this.nextId;
-    this.toasts.update((prev) => [...prev, { id, text, kind, cover }]);
+    this.toasts.update((prev) => [...prev, { id, text, kind, cover, route }]);
     this.notifyNative(title, text, cover);
     setTimeout(() => this.dismiss(id), 4000);
   }
