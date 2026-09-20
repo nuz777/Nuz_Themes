@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, inject, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
+import { Component, computed, ElementRef, HostListener, inject, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
 import { Router, RouterOutlet, RouterLink, NavigationStart } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Sidebar } from './components/sidebar/sidebar';
@@ -9,6 +9,7 @@ import { FavoritesFAB } from './components/favorites-fab/favorites-fab';
 import { TracksService } from './services/tracks.service';
 import { AudioService } from './services/audio.service';
 import { MediaSessionService } from './services/media-session.service';
+import type { Track } from './models/track';
 
 const BOOT_LOADER_ID = 'boot-loader';
 const MIN_VISIBLE_MS = 900;
@@ -26,6 +27,18 @@ export class App implements OnInit, OnDestroy {
   protected readonly sidebarOpen = signal(false);
   protected readonly sidebarCollapsed = signal(false);
   protected readonly isFullscreen = signal(false);
+  protected readonly searchQuery = signal('');
+  protected readonly mobileSearchOpen = signal(false);
+
+  protected readonly searchResults = computed(() => {
+    const query = this.searchQuery().trim().toLocaleLowerCase();
+    if (!query) return [];
+
+    return this.tracksService.tracks()
+      .filter((track) => [track.title, track.artist, track.album]
+        .some((value) => value.toLocaleLowerCase().includes(query)))
+      .slice(0, 8);
+  });
 
   @ViewChild('sidebarWrapper') private sidebarWrapper?: ElementRef<HTMLElement>;
   @ViewChild('sidebarToggle') private sidebarToggle?: ElementRef<HTMLElement>;
@@ -75,6 +88,25 @@ export class App implements OnInit, OnDestroy {
     document.addEventListener('fullscreenchange', () => {
       if (!document.fullscreenElement) exit();
     });
+  }
+
+  protected onSearchInput(event: Event): void {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  protected openSearch(): void {
+    this.mobileSearchOpen.set(true);
+  }
+
+  protected closeSearch(): void {
+    this.mobileSearchOpen.set(false);
+    this.searchQuery.set('');
+  }
+
+  protected playSearchResult(track: Track): void {
+    this.audio.playTrack(track, this.tracksService.tracks());
+    this.audio.openNowPlaying();
+    this.closeSearch();
   }
 
   ngOnInit(): void {
