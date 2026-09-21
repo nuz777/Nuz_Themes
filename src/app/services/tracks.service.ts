@@ -399,6 +399,16 @@ export class TracksService {
         lyricsUrl: '/lyrics/doom1.lrc',
         duration: 0,
       },
+      {
+        id: 'nuz7',
+        title: 'Люблю',
+        artist: 'БИТЬМРАЗЕЙ',
+        album: 'Nuz',
+        cover: '/caratulas/katyusha.png',
+        audioUrl: '/music/' + encodeURIComponent('Люблю- БИТЬМРАЗЕЙ.mp3'),
+        videoUrl: '/caratulas/' + encodeURIComponent('exeption.mp4'),
+        duration: 0,
+      },
     ];
   }
 
@@ -423,7 +433,7 @@ export class TracksService {
         name: 'nuzthemes',
         description: 'Los temas de Nuz.',
         cover: '/caratulas/' + encodeURIComponent('Snow Strippers - Passionate highs.webp'),
-        trackIds: ['nuz1', 'nuz2', 'nuz3', 'nuz4', 'nuz5', 'nuz6', 'doom1'],
+        trackIds: ['nuz1', 'nuz2', 'nuz3', 'nuz4', 'nuz5', 'nuz6', 'doom1', 'nuz7'],
       },
       {
         id: 'snicore',
