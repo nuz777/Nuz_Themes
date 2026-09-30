@@ -406,7 +406,7 @@ export class TracksService {
         album: 'Nuz',
         cover: '/caratulas/katyusha.png',
         audioUrl: '/music/' + encodeURIComponent('Люблю- БИТЬМРАЗЕЙ.mp3'),
-        videoUrl: '/caratulas/' + encodeURIComponent('exeption.mp4'),
+        videoUrl: '/video/' + encodeURIComponent('bitmrazey_ljublju.mp4'),
         duration: 0,
       },
     ];
