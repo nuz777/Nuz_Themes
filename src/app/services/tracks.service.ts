@@ -409,6 +409,15 @@ export class TracksService {
         videoUrl: '/video/' + encodeURIComponent('bitmrazey_ljublju.mp4'),
         duration: 0,
       },
+      {
+        id: 'nuz8',
+        title: 'Baseball Bat Discipline',
+        artist: 'Technology',
+        album: 'Nuz',
+        cover: '/caratulas/Baseball Bat Discipline -Technology.png',
+        audioUrl: '/music/' + encodeURIComponent('Baseball Bat Discipline -Technology.mp3'),
+        duration: 0,
+      },
     ];
   }
 
@@ -433,7 +442,7 @@ export class TracksService {
         name: 'nuzthemes',
         description: 'Los temas de Nuz.',
         cover: '/caratulas/' + encodeURIComponent('Snow Strippers - Passionate highs.webp'),
-        trackIds: ['nuz1', 'nuz2', 'nuz3', 'nuz4', 'nuz5', 'nuz6', 'doom1', 'nuz7'],
+        trackIds: ['nuz1', 'nuz2', 'nuz3', 'nuz4', 'nuz5', 'nuz6', 'doom1', 'nuz7', 'nuz8'],
       },
       {
         id: 'snicore',
