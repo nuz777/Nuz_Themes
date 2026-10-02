@@ -1,0 +1,27 @@
+{
+  "$schema": "https://dprint.dev/schemas/v0.json",
+  "lineWidth": 120,
+  "indentWidth": 2,
+  "newLineKind": "crlf",
+  "typescript": {
+    "semiColons": "asi",
+    "quoteStyle": "preferSingle",
+  },
+  "markup": {
+    "quotes": "single",
+    "formatComments": true,
+    "html.normal.selfClosing": true
+  },
+  "excludes": [
+    "**/node_modules",
+    "**/src/app",
+    "**/*-lock.json"
+  ],
+  "plugins": [
+    "npm:@dprint/typescript@0.96.1",
+    "npm:@dprint/json@0.25.1",
+    "npm:dprint-plugin-malva@0.16.0",
+    "npm:dprint-plugin-markup@0.27.5",
+    "https://plugins.dprint.dev/jolars/panache-v1.2.0.wasm"
+  ]
+}
