@@ -90,7 +90,7 @@ export class App implements OnInit, OnDestroy {
     });
   }
 
-  protected onSearchInput(event: Event): void {
+protected onSearchInput(event: Event): void {
     this.searchQuery.set((event.target as HTMLInputElement).value);
   }
 

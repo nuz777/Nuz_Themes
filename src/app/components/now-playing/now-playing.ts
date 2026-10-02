@@ -11,13 +11,14 @@ import { AmbientColorService } from '../../services/ambient-color.service';
 import { EQ_BANDS, EQ_PRESETS, EqualizerService } from '../../services/equalizer.service';
 import { LyricsService, type LyricLine } from '../../services/lyrics.service';
 import { LyricsPanel } from '../lyrics-panel/lyrics-panel';
+import { ChapterList } from '../chapter-list/chapter-list';
 import { DownloadButton } from '../download-button/download-button';
 import { FavoriteButton } from '../favorite-button/favorite-button';
 import { PipButton } from '../pip-button/pip-button';
 
 @Component({
   selector: 'app-now-playing',
-  imports: [LyricsPanel, DownloadButton, FavoriteButton, PipButton],
+  imports: [LyricsPanel, ChapterList, DownloadButton, FavoriteButton, PipButton],
   templateUrl: './now-playing.html',
   encapsulation: ViewEncapsulation.None,
   styles: [`
@@ -43,10 +44,153 @@ import { PipButton } from '../pip-button/pip-button';
       to   { transform: scaleY(var(--h, 0.6)); }
     }
 
+    .np-wave {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 200%;
+      height: 100%;
+      will-change: transform;
+      animation: np-wave-drift var(--wave-dur, 22s) linear infinite;
+    }
+
+    .np-wave-paused .np-wave {
+      animation-play-state: paused;
+    }
+
+    .np-stars {
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 64%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .np-star {
+      position: absolute;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+      animation: np-star-twinkle var(--dur, 3s) ease-in-out infinite;
+      animation-delay: var(--delay, 0ms);
+      will-change: opacity, transform;
+    }
+
+    .np-wave-paused .np-star {
+      animation-play-state: paused;
+    }
+
+    @keyframes np-star-twinkle {
+      0%,
+      100% {
+        opacity: var(--o, 0.5);
+        transform: scale(0.7);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.15);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .np-star {
+        animation: none;
+        opacity: var(--o, 0.5);
+      }
+    }
+
+    /* El velo y el sol comparten duración y easing para ir siempre sincronizados. */
+    .np-sun-light,
+    .np-sun {
+      animation-duration: 11s;
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+    }
+
+    .np-sun-light {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, #3b82f6 0%, #2563eb 48%, #1e40af 100%);
+      opacity: 0;
+      animation-name: np-sun-light;
+      will-change: opacity;
+    }
+
+    @keyframes np-sun-light {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 0.6;
+      }
+    }
+
+    .np-wave-paused .np-sun-light,
+    .np-wave-paused .np-sun {
+      animation-play-state: paused;
+    }
+
+    .np-sun-wrap {
+      position: absolute;
+      right: 10%;
+      bottom: 24%;
+      pointer-events: none;
+    }
+
+    .np-sun {
+      width: min(26vw, 180px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at 50% 50%,
+        #fffdf2 0%,
+        #ffe7a8 26%,
+        #ffc46b 46%,
+        rgba(255, 176, 87, 0.28) 64%,
+        rgba(255, 176, 87, 0) 74%
+      );
+      filter: drop-shadow(0 0 80px rgba(255, 193, 108, 0.6));
+      animation-name: np-sun-drift;
+      will-change: transform, opacity;
+    }
+
+    @keyframes np-sun-drift {
+      from {
+        transform: translateY(40px) scale(0.9);
+        opacity: 0.8;
+      }
+      to {
+        transform: translateY(-54px) scale(1.06);
+        opacity: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .np-sun,
+      .np-sun-light {
+        animation: none;
+      }
+
+      .np-sun-light {
+        opacity: 0.3;
+      }
+    }
+
+    @keyframes np-wave-drift {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .np-bar {
         animation: none;
         transform: scaleY(calc(var(--h, 0.6) * 0.6));
+      }
+
+      .np-wave {
+        animation: none;
       }
     }
 
@@ -102,6 +246,22 @@ export class NowPlaying {
   );
   protected readonly glowColor = signal('#ffffff');
 
+  protected readonly blurBackground = computed(
+    () => this.audio.currentTrack()?.blurBackground === true,
+  );
+
+  protected readonly showSun = computed(() => this.audio.currentTrack()?.showSun === true);
+
+  protected readonly showStars = computed(() => this.audio.currentTrack()?.showStars === true);
+
+  protected readonly shellStyle = computed(() =>
+    this.blurBackground()
+      ? {
+          'background-image': 'none',
+        }
+      : { 'background-image': this.background() },
+  );
+
   protected readonly lyrics = signal<LyricLine[] | null>(null);
   protected readonly lyricsLoading = signal(false);
   protected readonly lyricsError = signal(false);
@@ -131,8 +291,12 @@ export class NowPlaying {
     effect(() => {
       const track = this.audio.currentTrack();
       this.mobileLyricsOpen.set(false);
-      if (track) {
+      if (track?.backgroundColor) {
+        this.background.set(this.ambient.gradientFromColor(track.backgroundColor));
+      } else if (track) {
         void this.ambient.getGradient(track.cover).then((g) => this.background.set(g));
+      }
+      if (track) {
         void this.ambient.getColor(track.cover).then((c) => this.glowColor.set(c));
       }
     });
@@ -185,6 +349,50 @@ export class NowPlaying {
     return Math.round(Math.min(1, time / duration) * NowPlaying.WAVE_COUNT);
   });
 
+  // Los periodos (300, 200, 150) dividen 600 = la mitad del viewBox, que es
+  // justo el desplazamiento de la animación. Por eso el reinicio no se nota.
+  protected readonly stars = (() => {
+  const r = (n: number): number => {
+    const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  return Array.from({ length: 90 }, (_, i) => ({
+    left: +(r(i + 1) * 100).toFixed(2),
+    top: +(r(i + 7) * 62).toFixed(2),
+    size: +(1 + r(i + 13) * 2.4).toFixed(2),
+    dur: Math.round(2200 + r(i + 19) * 4200),
+    delay: Math.round(r(i + 23) * 4000),
+    opacity: +(0.25 + r(i + 29) * 0.7).toFixed(2),
+  }));
+})();
+
+protected readonly waveLayers = [
+    {
+      dur: 24,
+      opacity: 0.14,
+      color: '#ffffff',
+      width: 26,
+      blur: 0,
+      path: buildWavePath({ period: 300, baseline: 90, peak: 26 }),
+    },
+    {
+      dur: 17,
+      opacity: 0.1,
+      color: '#ffffff',
+      width: 40,
+      blur: 6,
+      path: buildWavePath({ period: 200, baseline: 124, peak: 20 }),
+    },
+    {
+      dur: 31,
+      opacity: 0.07,
+      color: '#ffffff',
+      width: 60,
+      blur: 14,
+      path: buildWavePath({ period: 150, baseline: 152, peak: 14 }),
+    },
+  ];
+
   private makeWaves(seed: string): number[] {
     let h = 2166136261;
     for (let i = 0; i < seed.length; i++) {
@@ -220,6 +428,27 @@ export class NowPlaying {
     }
     return index;
   });
+
+  protected readonly chapters = computed(() => this.audio.currentTrack()?.chapters ?? []);
+
+  protected readonly activeChapterIndex = computed(() => {
+    const chapters = this.chapters();
+    if (!chapters.length) return -1;
+
+    const t = this.audio.currentTime();
+    let index = -1;
+    for (let i = 0; i < chapters.length; i++) {
+      if (chapters[i].time > t) break;
+      index = i;
+    }
+    return index;
+  });
+
+  protected onChapterSelect(index: number): void {
+    const chapter = this.chapters()[index];
+    if (!chapter) return;
+    this.audio.seek(chapter.time);
+  }
 
   protected formatTime(seconds: number): string {
     if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -332,4 +561,34 @@ export class NowPlaying {
       }
     }
   }
+}
+
+interface WavePathOptions {
+  period: number;
+  baseline: number;
+  peak: number;
+}
+
+const WAVE_VIEWBOX_WIDTH = 1200;
+
+/**
+ * Genera una onda que se repite sin costura dentro del viewBox.
+ * El svg mide el doble del ancho visible y se desplaza -50%, así que el
+ * tramo visible es [0, WAVE_VIEWBOX_WIDTH / 2] y luego
+ * [WAVE_VIEWBOX_WIDTH / 2, WAVE_VIEWBOX_WIDTH]. Para que el reinicio no se
+ * note, el periodo tiene que dividir la mitad del viewBox.
+ */
+function buildWavePath({ period, baseline, peak }: WavePathOptions): string {
+  const half = period / 2;
+  const step = period / 4;
+  const parts: string[] = [`M0 ${baseline}`];
+
+  for (let x = 0, i = 0; x < WAVE_VIEWBOX_WIDTH; x += half, i++) {
+    const up = i % 2 === 0;
+    const c1 = up ? baseline - peak : baseline + peak;
+    const c2 = up ? baseline + peak : baseline - peak;
+    parts.push(`C ${x + step} ${c1}, ${x + step} ${c2}, ${x + half} ${baseline}`);
+  }
+
+  return parts.join(' ');
 }

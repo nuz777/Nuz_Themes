@@ -1,3 +1,8 @@
+export interface Chapter {
+  time: number;
+  title: string;
+}
+
 export interface Track {
   id: string;
   title: string;
@@ -8,4 +13,10 @@ export interface Track {
   duration: number;
   lyricsUrl?: string;
   videoUrl?: string;
+  chapters?: Chapter[];
+  blurBackground?: boolean;
+  hideRhythmBars?: boolean;
+  backgroundColor?: string;
+  showSun?: boolean;
+  showStars?: boolean;
 }

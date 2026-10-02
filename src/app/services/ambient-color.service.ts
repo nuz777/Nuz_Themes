@@ -46,6 +46,22 @@ export class AmbientColorService {
     return hex;
   }
 
+  /** Gradiente a partir de un color elegido a mano, sin mirar la carátula. */
+  gradientFromColor(color: string): string {
+    const rgb = this.parseHex(color);
+    if (!rgb) return this.fallback;
+    return `linear-gradient(180deg, ${color} 0%, ${this.hex(
+      this.darken(rgb, 0.25),
+    )} 55%, #000000 100%)`;
+  }
+
+  private parseHex(color: string): Rgb | null {
+    const match = /^#?([\da-f]{6})$/i.exec(color.trim());
+    if (!match) return null;
+    const value = parseInt(match[1], 16);
+    return { r: (value >> 16) & 0xff, g: (value >> 8) & 0xff, b: value & 0xff };
+  }
+
   private async analyze(imageUrl: string): Promise<Rgb | null> {
     if (!this.isBrowser) return null;
 

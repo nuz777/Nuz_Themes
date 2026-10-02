@@ -1,0 +1,20 @@
+@if (chapters().length) {
+  @if (!horizontal()) {
+    <p class="px-2 pb-2 text-xs font-bold uppercase tracking-widest text-white">Canciones</p>
+  }
+  <div class="flex gap-1 px-1" [class.flex-col]="!horizontal()" [class.flex-row]="horizontal()">
+    @for (chapter of chapters(); track chapter.time; let i = $index) {
+      <button
+        type="button"
+        (click)="select.emit(i)"
+        [class]="chapterClasses(i)"
+        [attr.aria-current]="i === activeIndex() ? 'true' : null"
+      >
+        <span class="w-9 shrink-0 text-white/80 tabular-nums">{{ formatTime(chapter.time) }}</span>
+        <span class="min-w-0 truncate" [style.max-width]="horizontal() ? '55vw' : null">{{
+          chapter.title
+        }}</span>
+      </button>
+    }
+  </div>
+}

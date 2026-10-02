@@ -28,7 +28,7 @@
 
 
       <!-- Barras rítmicas de fondo: solo canciones sin letra -->
-    @if (!audio.currentTrack()?.lyricsUrl && audio.currentTrack()?.id !== 'anim4') {
+    @if (!audio.currentTrack()?.lyricsUrl && audio.currentTrack()?.id !== 'anim4' && !audio.currentTrack()?.hideRhythmBars) {
       <div
         aria-hidden="true"
         class="np-bars pointer-events-none absolute inset-x-0 bottom-0 hidden h-[80%] items-end gap-[2px] sm:flex sm:gap-[3px]"
@@ -42,6 +42,65 @@
             [style.--dur]="b.dur + 'ms'"
             [style.--delay]="-b.delay + 'ms'"
           ></span>
+        }
+      </div>
+    }
+
+    <!-- Estrellas -->
+    @if (showStars()) {
+      <div class="np-stars" aria-hidden="true" [class.np-wave-paused]="!audio.isPlaying()">
+        @for (s of stars; track $index) {
+          <span
+            class="np-star"
+            [style.left.%]="s.left"
+            [style.top.%]="s.top"
+            [style.width.px]="s.size"
+            [style.height.px]="s.size"
+            [style.--o]="s.opacity"
+            [style.--dur]="s.dur + 'ms'"
+            [style.--delay]="-s.delay + 'ms'"
+          ></span>
+        }
+      </div>
+    }
+
+    <!-- Sol: el velo azul se sincroniza con su animación para aclarar el fondo -->
+    @if (showSun()) {
+      <div class="np-sun-light" aria-hidden="true" [class.np-wave-paused]="!audio.isPlaying()"></div>
+      <div
+        class="np-sun-wrap"
+        aria-hidden="true"
+        [class.np-wave-paused]="!audio.isPlaying()"
+      >
+        <div class="np-sun"></div>
+      </div>
+    }
+
+    <!-- Olas de fondo: para las canciones de relax_time -->
+    @if (blurBackground()) {
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] overflow-hidden"
+        [class.np-wave-paused]="!audio.isPlaying()"
+      >
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+        @for (w of waveLayers; track w.width) {
+          <svg
+            class="np-wave"
+            viewBox="0 0 1200 220"
+            preserveAspectRatio="none"
+            [style.--wave-dur]="w.dur + 's'"
+            [style.filter]="w.blur ? 'blur(' + w.blur + 'px)' : null"
+          >
+            <path
+              [attr.d]="w.path"
+              fill="none"
+              [attr.stroke]="w.color"
+              [attr.stroke-width]="w.width"
+              [attr.stroke-opacity]="w.opacity"
+              stroke-linecap="butt"
+            />
+          </svg>
         }
       </div>
     }
@@ -172,6 +231,17 @@
             </button>
           </div>
         </div>
+
+        @if (chapters().length) {
+          <div class="-mx-4 mt-5 w-screen max-w-none overflow-x-auto px-4 pb-1 md:hidden">
+            <app-chapter-list
+              [chapters]="chapters()"
+              [activeIndex]="activeChapterIndex()"
+              [horizontal]="true"
+              (select)="onChapterSelect($event)"
+            />
+          </div>
+        }
 
         <div class="flex items-center gap-1 rounded-full border border-white/10 bg-black/30 px-3 py-3 shadow-2xl shadow-black/50 backdrop-blur-md sm:gap-5 sm:px-6">
           <button
@@ -367,14 +437,23 @@
          }
         </div>
 
-      @if (track.lyricsUrl) {
-        <div class="hidden md:block md:w-1/2 md:min-w-0 md:self-stretch md:overflow-y-auto">
-          <app-lyrics-panel
-            [lines]="lyrics()"
-            [activeIndex]="activeLyricIndex()"
-            [loading]="lyricsLoading()"
-            [error]="lyricsError()"
-          />
+      @if (track.lyricsUrl || chapters().length) {
+        <div class="hidden w-1/2 min-w-0 self-stretch overflow-y-auto md:block">
+          @if (chapters().length) {
+            <app-chapter-list
+              [chapters]="chapters()"
+              [activeIndex]="activeChapterIndex()"
+              (select)="onChapterSelect($event)"
+            />
+          }
+          @if (track.lyricsUrl) {
+            <app-lyrics-panel
+              [lines]="lyrics()"
+              [activeIndex]="activeLyricIndex()"
+              [loading]="lyricsLoading()"
+              [error]="lyricsError()"
+            />
+          }
         </div>
       }
       </div>
