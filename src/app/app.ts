@@ -12,7 +12,7 @@ import { MediaSessionService } from './services/media-session.service';
 import type { Track } from './models/track';
 
 const BOOT_LOADER_ID = 'boot-loader';
-const MIN_VISIBLE_MS = 900;
+const MIN_VISIBLE_MS = 450;
 
 @Component({
   selector: 'app-root',
@@ -101,6 +101,10 @@ protected onSearchInput(event: Event): void {
   protected closeSearch(): void {
     this.mobileSearchOpen.set(false);
     this.searchQuery.set('');
+  }
+
+  protected warm(track: Track): void {
+    this.audio.warm(track);
   }
 
   protected playSearchResult(track: Track): void {

@@ -24,6 +24,7 @@ export class AudioService {
 
   private audio: HTMLAudioElement | null = null;
   private queueIndex = -1;
+  private warmers = new Map<string, HTMLAudioElement>();
 
   get isBrowser(): boolean {
     return typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -39,6 +40,38 @@ export class AudioService {
 
   closeNowPlaying(): void {
     this.showNowPlaying.set(false);
+  }
+
+  /**
+   * Empieza a descargar el audio de una canción antes de que la reproduzcas
+   * (al pasar el mouse o el foco por encima). En redes lentas esto hace que
+   * el clic suene casi al instante porque la descarga ya viene en camino.
+   */
+  warm(track: Track): void {
+    if (!this.isBrowser) return;
+    if (!track.audioUrl || this.warmers.has(track.id)) return;
+    if (this.currentTrack()?.id === track.id) return;
+    if (this.offline.isDownloaded(track.id) || this.offline.isDeviceDownloaded(track.id)) return;
+
+    const el = new Audio();
+    el.preload = 'auto';
+    el.src = track.audioUrl;
+    el.load();
+    this.warmers.set(track.id, el);
+    this.trimWarmers(track.id);
+  }
+
+  private trimWarmers(keepId: string): void {
+    while (this.warmers.size > 3) {
+      const oldest = this.warmers.keys().next().value;
+      if (oldest === undefined || oldest === keepId) break;
+      const el = this.warmers.get(oldest);
+      if (el) {
+        el.removeAttribute('src');
+        el.load();
+      }
+      this.warmers.delete(oldest);
+    }
   }
 
   playTrack(track: Track, queue?: Track[]): void {
@@ -57,13 +90,35 @@ export class AudioService {
     }
 
     this.currentTrack.set(track);
+    const url = this.warmers.get(track.id);
+    this.warmers.delete(track.id);
+    if (url) {
+      url.removeAttribute('src');
+      url.load();
+    }
+
     void this.loadAndPlay(track);
+    this.warmNext();
+  }
+
+  /** Precarga la siguiente canción de la cola para que el cambio sea instantáneo. */
+  private warmNext(): void {
+    const q = this.queue();
+    if (!q.length || this.queueIndex < 0) return;
+    const nextIndex = this.queueIndex + 1;
+    if (nextIndex >= q.length) return;
+    const next = q[nextIndex];
+    if (next) this.warm(next);
   }
 
   private async loadAndPlay(track: Track): Promise<void> {
-    const src = await this.offline.resolveSourceUrl(track);
+    // Se pide la fuente sin esperar a IndexedDB: el audio online es el caso común.
+    const src = this.offline.isDownloaded(track.id)
+      ? await this.offline.resolveSourceUrl(track)
+      : track.audioUrl;
     if (this.currentTrack()?.id !== track.id) return;
 
+    this.audio!.preload = 'auto';
     this.audio!.src = src;
     this.audio!.load();
     this.equalizer.resume();

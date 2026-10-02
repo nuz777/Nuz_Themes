@@ -72,6 +72,7 @@
               @for (track of searchResults(); track track.id) {
                 <button
                   (click)="playSearchResult(track)"
+                  (pointerenter)="warm(track)"
                   class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-white/10"
                 >
                   <img [src]="track.cover" [alt]="track.title" class="h-12 w-12 shrink-0 rounded-lg object-cover" />
@@ -160,6 +161,7 @@
                 @for (track of searchResults(); track track.id) {
                   <button
                     (click)="playSearchResult(track)"
+                    (pointerenter)="warm(track)"
                     class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-white/10"
                   >
                     <img [src]="track.cover" [alt]="track.title" class="h-12 w-12 shrink-0 rounded-lg object-cover" />

@@ -87,6 +87,9 @@ export class OfflineStorageService {
 
     if (!this.isSupported) return track.audioUrl;
 
+    // Atajo: si no hay nada descargado no se abre la base, así el play no espera.
+    if (!this.hasDownloads()) return track.audioUrl;
+
     try {
       const db = await this.getDb();
       const stored = await this.getBlob(db, track.id);
@@ -126,6 +129,12 @@ export class OfflineStorageService {
     } finally {
       this.inFlight.delete(track.id);
     }
+  }
+
+  private hasDownloads(): boolean {
+    if (this.objectUrls.size) return true;
+    if (Object.keys(this.status()).length) return true;
+    return this.deviceDownloads().size > 0;
   }
 
   private async init(): Promise<void> {

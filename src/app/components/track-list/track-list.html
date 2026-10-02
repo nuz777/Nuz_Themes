@@ -11,6 +11,9 @@
       <li class="group flex items-center gap-1 rounded-md pr-1 transition hover:bg-neutral-800/80">
         <button
           (click)="playTrack(track, i)"
+          (pointerenter)="warm(track)"
+          (focus)="warm(track)"
+          (touchstart)="warm(track)"
           class="flex min-w-0 flex-1 items-center gap-2 py-2 pl-4 text-left sm:gap-4"
         >
           <span class="w-4 shrink-0 text-center text-sm tabular-nums text-neutral-400">

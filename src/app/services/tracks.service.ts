@@ -20,18 +20,6 @@ export class TracksService {
   constructor() {
     this.tracks.set(this.buildTracks());
     this.playlists.set([...this.buildPlaylists(), ...this.readUserPlaylists()]);
-    this.preloadCovers();
-  }
-
-  private preloadCovers(): void {
-    if (typeof Image === 'undefined') return;
-    const urls = new Set<string>();
-    for (const track of this.tracks()) urls.add(track.cover);
-    for (const playlist of this.playlists()) urls.add(playlist.cover);
-    urls.forEach((url) => {
-      const img = new Image();
-      img.src = url;
-    });
   }
 
   getTrack(id: string): Track | undefined {
@@ -221,7 +209,7 @@ export class TracksService {
         title: 'SMOKE IT OFF!',
         artist: 'Lumi Athena ft. jnhygs',
         album: 'Lumi Athena',
-        cover: '/caratulas/smokeofflumiathena.png',
+        cover: '/caratulas/smokeofflumiathena.webp',
         audioUrl: '/music/' + encodeURIComponent('Lumi Athena - SMOKE IT OFF! ft. jnhygs.mp3'),
         duration: 0,
       },
@@ -230,7 +218,7 @@ export class TracksService {
         title: 'One Night in Berlin',
         artist: 'Baby Jane',
         album: 'Snicore',
-        cover: '/caratulas/babyjane.png',
+        cover: '/caratulas/babyjane.webp',
         audioUrl: '/music/' + encodeURIComponent('Baby Jane - One Night in Berlin (Nightcore).mp3'),
         duration: 0,
       },
@@ -266,7 +254,7 @@ export class TracksService {
         title: 'MONTAGEM DIMENSION',
         artist: 'Nuz',
         album: 'Phonk',
-        cover: '/caratulas/montagemdimesion.png',
+        cover: '/caratulas/montagemdimesion.webp',
         audioUrl: '/music/MONTAGEM DIMENSION.mp3',
         duration: 0,
       },
@@ -275,7 +263,7 @@ export class TracksService {
         title: 'Baixo Cristal',
         artist: 'Teclas',
         album: 'Phonk',
-        cover: '/caratulas/baixocristal.png',
+        cover: '/caratulas/baixocristal.webp',
         audioUrl: '/music/Baixo Cristal Teclas.mp3',
         duration: 0,
       },
@@ -284,7 +272,7 @@ export class TracksService {
         title: 'OGAME',
         artist: 'Nuz',
         album: 'Phonk',
-        cover: '/caratulas/agome.png',
+        cover: '/caratulas/agome.webp',
         audioUrl: '/music/OGAME.mp3',
         duration: 0,
       },
@@ -303,7 +291,7 @@ export class TracksService {
         title: 'Gyoretsu no dekiru Eirin Shinryojo',
         artist: 'Eirin Shinryojo',
         album: 'Classic',
-        cover: '/caratulas/' + encodeURIComponent('Gyoretsu no dekiru Eirin Shinryojo.png'),
+        cover: '/caratulas/' + encodeURIComponent('Gyoretsu no dekiru Eirin Shinryojo.webp'),
         audioUrl: '/music/' + encodeURIComponent('Gyoretsu no dekiru Eirin Shinryojo.mp3'),
         duration: 0,
       },
@@ -349,7 +337,7 @@ export class TracksService {
         title: 'Alors on danse',
         artist: 'Indila',
         album: 'Animation',
-        cover: '/caratulas/Alors on danse.png',
+        cover: '/caratulas/Alors on danse.webp',
         audioUrl: '/music/Alors on danse (Radio Edit).mp3',
         duration: 0,
       },
@@ -358,7 +346,7 @@ export class TracksService {
         title: 'Hey Kids',
         artist: 'Molina',
         album: 'Animation',
-        cover: '/caratulas/heykids.png',
+        cover: '/caratulas/heykids.webp',
         audioUrl: '/music/' + encodeURIComponent('Molina - Hey Kids [Traducción al español].mp3'),
         duration: 0,
       },
@@ -394,7 +382,7 @@ export class TracksService {
         title: 'Счастье за горами',
         artist: 'Панелька',
         album: 'Nuz',
-        cover: '/caratulas/' + encodeURIComponent('Панелька - Счастье за горами (official music video 2022)  Russian doomer video.jpg'),
+        cover: '/caratulas/' + encodeURIComponent('Панелька - Счастье за горами (official music video 2022)  Russian doomer video.webp'),
         audioUrl: '/music/' + encodeURIComponent('Панелька - Счастье за горами (official music video 2022)  Russian doomer video.mp3'),
         lyricsUrl: '/lyrics/doom1.lrc',
         duration: 0,
@@ -404,7 +392,7 @@ export class TracksService {
         title: 'Люблю',
         artist: 'БИТЬМРАЗЕЙ',
         album: 'Nuz',
-        cover: '/caratulas/katyusha.png',
+        cover: '/caratulas/katyusha.webp',
         audioUrl: '/music/' + encodeURIComponent('Люблю- БИТЬМРАЗЕЙ.mp3'),
         videoUrl: '/video/' + encodeURIComponent('bitmrazey_ljublju.mp4'),
         duration: 0,
@@ -414,7 +402,7 @@ export class TracksService {
         title: 'Baseball Bat Discipline',
         artist: 'Technology',
         album: 'Nuz',
-        cover: '/caratulas/Baseball Bat Discipline -Technology.png',
+        cover: '/caratulas/Baseball Bat Discipline -Technology.webp',
         audioUrl: '/music/' + encodeURIComponent('Baseball Bat Discipline -Technology.mp3'),
         duration: 0, // This track is a joke, but it is still a track.
       },
@@ -423,7 +411,7 @@ export class TracksService {
         title: 'Verano Finito',
         artist: 'Post-punk selection',
         album: 'relax_time',
-        cover: '/caratulas/' + encodeURIComponent('Лето не бесконечное как и твои сил.png'),
+        cover: '/caratulas/' + encodeURIComponent('Лето не бесконечное как и твои сил.webp'),
         audioUrl: '/music/' + encodeURIComponent('Лето не бесконечное как и твои силы Post-punk selection Doomer music.mp3'),
         chapters: [
           { time: 0, title: 'Ploho - Не будем прощаться' },
@@ -445,7 +433,7 @@ export class TracksService {
         title: 'Descanso Final',
         artist: 'Post-punk selection',
         album: 'relax_time',
-        cover: '/caratulas/' + encodeURIComponent('Плейлист для того, чтобы последний раз отдохнуть.png'),
+        cover: '/caratulas/' + encodeURIComponent('Плейлист для того, чтобы последний раз отдохнуть.webp'),
         audioUrl: '/music/' + encodeURIComponent('Плейлист для того, чтобы последний раз отдохнуть.mp3'),
         chapters: [
           { time: 0, title: 'Где Фантом? - Рельсы' },
@@ -464,7 +452,7 @@ export class TracksService {
         title: 'Cry',
         artist: 'Charlie Puth',
         album: 'relax_time',
-        cover: '/caratulas/' + encodeURIComponent('Charlie Puth - Cry .png'),
+        cover: '/caratulas/' + encodeURIComponent('Charlie Puth - Cry .webp'),
         audioUrl: '/music/' + encodeURIComponent('Charlie Puth - Cry (with Kenny G) [Official Audio].mp3'),
         backgroundColor: '#1e3a8a',
         showSun: true,
@@ -503,7 +491,7 @@ export class TracksService {
         id: 'relax-time',
         name: 'relax_time',
         description: 'Para relajarte sin pensar.',
-        cover: '/caratulas/' + encodeURIComponent('Плейлист для того, чтобы последний раз отдохнуть.png'),
+        cover: '/caratulas/' + encodeURIComponent('Плейлист для того, чтобы последний раз отдохнуть.webp'),
         trackIds: ['nuz9', 'relax2', 'relax3'],
       },
       {

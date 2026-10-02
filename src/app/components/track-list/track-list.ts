@@ -32,6 +32,10 @@ export class TrackList {
     return this.durations.durationOf(track.id);
   }
 
+  protected warm(track: Track): void {
+    this.audio.warm(track);
+  }
+
   protected playTrack(track: Track, index: number): void {
     this.audio.playTrack(track, this.tracks());
     this.audio.openNowPlaying();
