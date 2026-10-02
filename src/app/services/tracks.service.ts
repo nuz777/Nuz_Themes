@@ -255,6 +255,7 @@ export class TracksService {
         artist: 'Nuz',
         album: 'Phonk',
         cover: '/caratulas/montagemdimesion.webp',
+        videoUrl: '/video/' + encodeURIComponent('MONTAGEM DIMENSION.mp4'),
         audioUrl: '/music/MONTAGEM DIMENSION.mp3',
         duration: 0,
       },
