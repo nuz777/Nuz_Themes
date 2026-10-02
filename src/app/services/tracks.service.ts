@@ -351,6 +351,16 @@ export class TracksService {
         duration: 0,
       },
       {
+        id: 'anim7',
+        title: 'Keep Their Heads Ringin',
+        artist: 'EL mathafoka Dr. Dre',
+        album: 'Animation',
+        cover: '/caratulas/Dr. Dre- Keep Their Heads Ringin’ (slowed n reverb).webp',
+        audioUrl: '/music/' + encodeURIComponent('nuzw.mp3'),
+        videoUrl: '/video/keeptheirrigin.mp4',
+        duration: 0,
+      },
+      {
         id: 'nuz4',
         title: 'Russian Car Driver',
         artist: 'OST',
@@ -471,7 +481,7 @@ export class TracksService {
         name: 'animation',
         description: 'Música de tus animaciones.',
         cover: '/caratulas/image.webp',
-        trackIds: ['local1', 'anim1', 'anim2', 'anim3', 'anim4', 'anim5', 'anim6'],
+        trackIds: ['local1', 'anim1', 'anim2', 'anim3', 'anim4', 'anim5', 'anim6', 'anim7'],
       },
       {
         id: 'phonk',

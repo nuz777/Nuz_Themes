@@ -4,6 +4,8 @@ import {
   effect,
   inject,
   signal,
+  ViewChild,
+  ElementRef,
   ViewEncapsulation,
 } from '@angular/core';
 import { AudioService } from '../../services/audio.service';
@@ -299,7 +301,7 @@ export class NowPlaying {
       if (track) {
         void this.ambient.getColor(track.cover).then((c) => this.glowColor.set(c));
       }
-    });
+      });
 
     effect((onCleanup) => {
       const url = this.audio.currentTrack()?.lyricsUrl;
@@ -328,7 +330,20 @@ export class NowPlaying {
           this.lyricsLoading.set(false);
         });
     });
+
+    effect(() => {
+      const track = this.audio.currentTrack();
+      if (!track) return;
+      // Cuando la canción empieza a reproducirse, buscar al segundo 11
+      if (track.videoUrl && this.audio.isPlaying()) {
+        setTimeout(() => {
+          this.bgVideo.nativeElement.currentTime = 11;
+        }, 500);
+      }
+    });
   }
+
+  @ViewChild('bgVideo') protected readonly bgVideo!: ElementRef<HTMLVideoElement>;
 
   protected readonly hasTrack = computed(() => !!this.audio.currentTrack());
 
