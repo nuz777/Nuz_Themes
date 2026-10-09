@@ -1,4 +1,4 @@
-import { Component, input, inject, effect, untracked } from '@angular/core';
+import { Component, input, inject, effect, untracked, signal } from '@angular/core';
 import type { Track } from '../../models/track';
 import { AudioService } from '../../services/audio.service';
 import { DurationService } from '../../services/duration.service';
@@ -21,6 +21,8 @@ export class TrackList {
   private readonly toast = inject(ToastService);
   private readonly durations = inject(DurationService);
 
+  protected readonly deleteTarget = signal<{ track: Track; type: 'device' | 'playlist' } | null>(null);
+
   constructor() {
     effect(() => {
       const tracks = this.tracks();
@@ -41,23 +43,40 @@ export class TrackList {
     this.audio.openNowPlaying();
   }
 
-  protected removeFromPlaylist(track: Track, event: Event): void {
+  protected requestRemoveFromPlaylist(track: Track, event: Event): void {
     event.stopPropagation();
-    const playlistId = this.playlistId();
-    const playlist = playlistId ? this.tracksService.getPlaylist(playlistId) : undefined;
-    if (!playlistId || !playlist) return;
-
-    if (this.tracksService.removeTrackFromPlaylist(playlistId, track.id)) {
-      this.toast.show(`Quitada de "${playlist.name}"`, 'success', track.cover, 'Playlist actualizada');
-    }
+    this.deleteTarget.set({ track, type: 'playlist' });
   }
 
-  protected removeUserTrack(track: Track, event: Event): void {
+  protected requestRemoveUserTrack(track: Track, event: Event): void {
     event.stopPropagation();
-    if (this.audio.currentTrack()?.id === track.id) {
-      this.audio.pause();
+    this.deleteTarget.set({ track, type: 'device' });
+  }
+
+  protected cancelDelete(): void {
+    this.deleteTarget.set(null);
+  }
+
+  protected confirmDelete(): void {
+    const target = this.deleteTarget();
+    if (!target) return;
+
+    if (target.type === 'playlist') {
+      const playlistId = this.playlistId();
+      const playlist = playlistId ? this.tracksService.getPlaylist(playlistId) : undefined;
+      if (playlistId && playlist) {
+        if (this.tracksService.removeTrackFromPlaylist(playlistId, target.track.id)) {
+          this.toast.show(`Quitada de "${playlist.name}"`, 'success', target.track.cover, 'Playlist actualizada');
+        }
+      }
+    } else if (target.type === 'device') {
+      if (this.audio.currentTrack()?.id === target.track.id) {
+        this.audio.pause();
+      }
+      this.tracksService.removeUserTrack(target.track.id);
     }
-    this.tracksService.removeUserTrack(track.id);
+
+    this.deleteTarget.set(null);
   }
 
   protected formatTime(seconds: number): string {

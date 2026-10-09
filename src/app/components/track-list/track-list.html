@@ -65,7 +65,7 @@
          <app-add-to-playlist [track]="track" />
          @if (playlistId()) {
            <button
-             (click)="removeFromPlaylist(track, $event)"
+             (click)="requestRemoveFromPlaylist(track, $event)"
              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-red-500/15 hover:text-red-300"
              [attr.aria-label]="'Quitar ' + track.title + ' de la playlist'"
              title="Quitar de la playlist"
@@ -80,7 +80,7 @@
          }
          @if (track.id.startsWith('user-')) {
            <button
-             (click)="removeUserTrack(track, $event)"
+             (click)="requestRemoveUserTrack(track, $event)"
              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-red-500/15 hover:text-red-300"
              [attr.aria-label]="'Eliminar ' + track.title + ' del dispositivo'"
              title="Eliminar música subida"
@@ -93,4 +93,52 @@
       </li>
     }
   </ul>
+
+  @if (deleteTarget(); as target) {
+    <div
+      class="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      (click)="cancelDelete()"
+    >
+      <div
+        class="w-full max-w-sm rounded-2xl border border-white/10 bg-neutral-950 p-5 shadow-2xl shadow-black"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="mb-5 flex items-start gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/15 text-red-300">
+            <svg width="20" height="20" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5-1-1h-5l-1 1H5v2h14V4z" />
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-lg font-bold text-white">
+              {{ target.type === 'device' ? 'Eliminar canción' : 'Quitar de la playlist' }}
+            </h2>
+            <p class="mt-1 text-sm leading-relaxed text-neutral-400">
+              @if (target.type === 'device') {
+                ¿Seguro que quieres eliminar <strong class="text-white">"{{ target.track.title }}"</strong>? Se borrará de tu navegador y esta acción no se puede deshacer.
+              } @else {
+                ¿Quieres quitar <strong class="text-white">"{{ target.track.title }}"</strong> de esta playlist?
+              }
+            </p>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="cancelDelete()"
+            class="rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-neutral-300 transition hover:bg-white/10 hover:text-white"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            (click)="confirmDelete()"
+            class="rounded-lg bg-red-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-400"
+          >
+            {{ target.type === 'device' ? 'Eliminar' : 'Quitar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

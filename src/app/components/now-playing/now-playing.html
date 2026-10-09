@@ -48,7 +48,7 @@
 
     <!-- Estrellas -->
     @if (showStars()) {
-      <div class="np-stars hidden sm:block" aria-hidden="true" [class.np-wave-paused]="!audio.isPlaying()">
+      <div class="np-stars" aria-hidden="true" [class.np-wave-paused]="!audio.isPlaying()">
         @for (s of stars; track $index) {
           <span
             class="np-star"

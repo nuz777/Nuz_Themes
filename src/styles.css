@@ -301,35 +301,3 @@ body {
   }
 }
 
-@media (max-width: 768px) {
-  .record-spin {
-    animation: none !important;
-  }
-  .glow-breathe {
-    animation: none !important;
-    transform: none !important;
-  }
-  .wave-live {
-    animation: none !important;
-  }
-  .equalizer-bar {
-    animation: none !important;
-  }
-  .track-enter {
-    animation: none !important;
-  }
-  .np-stars {
-    display: none !important;
-  }
-  .np-star {
-    animation: none !important;
-  }
-  .np-sun,
-  .np-sun-light {
-    animation: none !important;
-  }
-  .np-wave {
-    animation: none !important;
-  }
-}
-
