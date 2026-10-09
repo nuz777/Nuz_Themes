@@ -259,6 +259,16 @@ export class TracksService {
         audioUrl: '/music/MONTAGEM DIMENSION.mp3',
         duration: 0,
       },
+
+       {
+        id: 'ph7',
+        title: 'MONTAGEM DIMENSION',
+        artist: 'Odetari',
+        album: 'Phonk',
+        cover: '/caratulas/heavylove.png',
+        audioUrl: '/music/HeavyLove.mp3',
+        duration: 0,
+      },
       {
         id: 'ph5',
         title: 'Baixo Cristal',
@@ -489,7 +499,7 @@ export class TracksService {
         name: 'phonk',
         description: 'Phonk crudo y pesado.',
         cover: '/caratulas/AUTOMOTIVOANTI-CELESTIAL .webp',
-        trackIds: ['ph1', 'ph2', 'ph3', 'ph4', 'ph5', 'ph6'],
+        trackIds: ['ph1', 'ph2', 'ph3', 'ph4', 'ph5', 'ph6', 'ph7'],
       },
       {
         id: 'nuzthemes',
