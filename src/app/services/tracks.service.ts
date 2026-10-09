@@ -38,6 +38,7 @@ export class TracksService {
     this.userTracks.set(this.readUserTracks());
     this.tracks.set([...this.buildUserTracks(), ...this.buildTracks()]);
     this.playlists.set([...this.buildPlaylists(), ...this.readUserPlaylists()]);
+    void this.hydrateUserCovers();
   }
 
   getTrack(id: string): Track | undefined {
@@ -143,6 +144,14 @@ export class TracksService {
       this.extractAudioDuration(audioBlob),
     ]);
 
+    if (params.cover) {
+      try {
+        await this.offline.storeUserCover(id, params.cover);
+      } catch {
+        // Fallback to data URL
+      }
+    }
+
     const metadata: UserTrackMetadata = {
       id,
       title: params.title?.trim() || this.getBaseName(file.name),
@@ -221,10 +230,22 @@ export class TracksService {
       title: meta.title,
       artist: meta.artist,
       album: meta.album,
-      cover: meta.cover,
+      cover: this.offline.getUserCoverUrl(meta.id) || meta.cover || '/caratulas/image.webp',
       audioUrl: this.offline.getUserTrackUrl(meta.id) || '',
       duration: meta.duration,
     }));
+  }
+
+  private async hydrateUserCovers(): Promise<void> {
+    if (typeof window === 'undefined') return;
+    for (const meta of this.userTracks()) {
+      const coverUrl = await this.offline.loadUserCoverUrl(meta.id);
+      if (coverUrl) {
+        this.tracks.update((tracks) =>
+          tracks.map((t) => (t.id === meta.id ? { ...t, cover: coverUrl } : t)),
+        );
+      }
+    }
   }
 
   private readUserTracks(): UserTrackMetadata[] {
@@ -248,21 +269,70 @@ export class TracksService {
     if (typeof window === 'undefined') return;
     try {
       window.localStorage.setItem(USER_TRACKS_KEY, JSON.stringify(this.userTracks()));
-    } catch {
-      // Fallback in case of storage quota issues
+    } catch (e) {
+      console.warn('LocalStorage quota reached, saving with lightweight metadata', e);
+      try {
+        const lightweight = this.userTracks().map((item) => ({
+          ...item,
+          cover: item.cover.length > 40000 ? '/caratulas/image.webp' : item.cover,
+        }));
+        window.localStorage.setItem(USER_TRACKS_KEY, JSON.stringify(lightweight));
+      } catch {
+        // Ignore
+      }
     }
   }
 
   private async processCoverImage(file: File | null): Promise<string> {
     if (!file) return '/caratulas/image.webp';
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          const maxDim = 400;
-          let w = img.width;
-          let h = img.height;
+
+    // 1. Try canvas resize via ObjectURL (handles any size, fast, memory-safe)
+    try {
+      const canvasResult = await this.resizeImageToDataUrl(file, 320, 0.78);
+      if (canvasResult && canvasResult.startsWith('data:image/')) {
+        return canvasResult;
+      }
+    } catch {
+      // Fallback below
+    }
+
+    // 2. Fallback to direct FileReader dataURL
+    try {
+      const fileReaderResult = await this.fileToDataUrl(file);
+      if (fileReaderResult && fileReaderResult.startsWith('data:image/')) {
+        return fileReaderResult;
+      }
+    } catch {
+      // Fallback below
+    }
+
+    return '/caratulas/image.webp';
+  }
+
+  private resizeImageToDataUrl(file: File, maxDim = 320, quality = 0.78): Promise<string> {
+    return new Promise((resolve, reject) => {
+      if (typeof window === 'undefined' || typeof document === 'undefined') {
+        return resolve('/caratulas/image.webp');
+      }
+
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      let cleaned = false;
+      const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        try { URL.revokeObjectURL(objectUrl); } catch {}
+      };
+
+      img.onload = () => {
+        try {
+          let w = img.naturalWidth || img.width;
+          let h = img.naturalHeight || img.height;
+          if (!w || !h) {
+            cleanup();
+            return reject(new Error('Invalid dimensions'));
+          }
+
           if (w > maxDim || h > maxDim) {
             if (w > h) {
               h = Math.round((h * maxDim) / w);
@@ -272,21 +342,46 @@ export class TracksService {
               h = maxDim;
             }
           }
+
           const canvas = document.createElement('canvas');
           canvas.width = w;
           canvas.height = h;
           const ctx = canvas.getContext('2d');
           if (!ctx) {
-            resolve(reader.result as string);
-            return;
+            cleanup();
+            return reject(new Error('Canvas context unavailable'));
           }
+
           ctx.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/jpeg', 0.82));
-        };
-        img.onerror = () => resolve('/caratulas/image.webp');
-        img.src = reader.result as string;
+          cleanup();
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(dataUrl);
+        } catch (e) {
+          cleanup();
+          reject(e);
+        }
       };
-      reader.onerror = () => resolve('/caratulas/image.webp');
+
+      img.onerror = () => {
+        cleanup();
+        reject(new Error('Image failed to load'));
+      };
+
+      img.src = objectUrl;
+    });
+  }
+
+  private fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('FileReader returned non-string result'));
+        }
+      };
+      reader.onerror = () => reject(reader.error || new Error('FileReader error'));
       reader.readAsDataURL(file);
     });
   }
@@ -597,6 +692,15 @@ export class TracksService {
         duration: 0,
       },
       {
+        id: 'anim8',
+        title: 'Cult memeber',
+        artist: 'Three',
+        album: 'Animation',
+        cover: '/caratulas/cult.png',
+        audioUrl: '/music/CultMember.mp3',
+        duration: 0,
+      },
+      {
         id: 'nuz4',
         title: 'Russian Car Driver',
         artist: 'OST',
@@ -717,7 +821,7 @@ export class TracksService {
         name: 'animation',
         description: 'Música de tus animaciones.',
         cover: '/caratulas/image.webp',
-        trackIds: ['local1', 'anim1', 'anim2', 'anim3', 'anim4', 'anim5', 'anim6', 'anim7'],
+        trackIds: ['local1', 'anim1', 'anim2', 'anim3', 'anim4', 'anim5', 'anim6', 'anim7', 'anim8'],
       },
       {
         id: 'phonk',

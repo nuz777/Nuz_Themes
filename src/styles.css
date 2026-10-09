@@ -290,6 +290,73 @@ body {
   }
 }
 
+@keyframes play-pop {
+  0% {
+    transform: scale(0.6) rotate(-10deg);
+    opacity: 0.5;
+  }
+  65% {
+    transform: scale(1.18) rotate(3deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.animate-play-pop {
+  animation: play-pop 280ms cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@keyframes soundwave-ring {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+.animate-soundwave-ring {
+  animation: soundwave-ring 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+@keyframes play-glow {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.12);
+  }
+}
+
+.animate-play-glow {
+  animation: play-glow 2.5s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 250ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .favorite-pop,
   .record-spin {
@@ -297,6 +364,12 @@ body {
   }
   .wave-live,
   .glow-breathe {
+    animation: none;
+  }
+  .animate-play-pop,
+  .animate-soundwave-ring,
+  .animate-play-glow,
+  .animate-fade-in {
     animation: none;
   }
 }

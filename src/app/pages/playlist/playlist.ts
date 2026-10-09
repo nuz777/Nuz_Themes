@@ -68,8 +68,34 @@ export class PlaylistPage implements OnDestroy {
     if (this.timer) clearInterval(this.timer);
   }
 
+  protected readonly isCurrentPlaylist = computed(() => {
+    const cur = this.audio.currentTrack();
+    if (!cur) return false;
+    return this.tracks().some((t) => t.id === cur.id);
+  });
+
+  protected readonly isPlayingPlaylist = computed(() => {
+    return this.isCurrentPlaylist() && this.audio.isPlaying();
+  });
+
+  protected togglePlayPlaylist(): void {
+    const tracks = this.tracks();
+    if (tracks.length === 0) {
+      this.emptyPromptOpen.set(true);
+      return;
+    }
+
+    if (this.isPlayingPlaylist()) {
+      this.audio.pause();
+    } else if (this.isCurrentPlaylist()) {
+      this.audio.togglePlay();
+    } else {
+      this.audio.playQueue(tracks, 0);
+    }
+  }
+
   protected playAll(): void {
-    this.audio.playQueue(this.tracks());
+    this.togglePlayPlaylist();
   }
 
   protected requestDeletePlaylist(): void {

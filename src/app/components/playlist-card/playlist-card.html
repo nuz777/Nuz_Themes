@@ -14,12 +14,28 @@
       />
     }
     <button
-      class="absolute bottom-2 right-2 flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-white text-black opacity-0 shadow-xl transition group-hover:translate-y-0 group-hover:opacity-100"
-      aria-label="Reproducir playlist"
+      type="button"
+      (click)="togglePlay($event)"
+      class="absolute bottom-2 right-2 flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-xl transition-all duration-300 hover:scale-110 active:scale-95"
+      [class.opacity-100]="isPlayingPlaylist()"
+      [class.translate-y-0]="isPlayingPlaylist()"
+      [class.shadow-[0_0_20px_rgba(255,255,255,0.7)]]="isPlayingPlaylist()"
+      [class.opacity-0]="!isPlayingPlaylist()"
+      [class.translate-y-2]="!isPlayingPlaylist()"
+      [class.group-hover:opacity-100]="!isPlayingPlaylist()"
+      [class.group-hover:translate-y-0]="!isPlayingPlaylist()"
+      [attr.aria-label]="isPlayingPlaylist() ? 'Pausar playlist' : 'Reproducir playlist'"
+      [title]="isPlayingPlaylist() ? 'Pausar' : 'Reproducir'"
     >
-      <svg width="24" height="24" viewBox="0 0 24 24" class="fill-current translate-x-0.5">
-        <path d="M8 5v14l11-7L8 5z" />
-      </svg>
+      @if (isPlayingPlaylist()) {
+        <svg width="22" height="22" viewBox="0 0 24 24" class="fill-current animate-play-pop" aria-hidden="true">
+          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+        </svg>
+      } @else {
+        <svg width="22" height="22" viewBox="0 0 24 24" class="fill-current translate-x-0.5 animate-play-pop" aria-hidden="true">
+          <path d="M8 5v14l11-7L8 5z" />
+        </svg>
+      }
     </button>
   </div>
   <h3 class="truncate font-bold text-white">{{ playlist().name }}</h3>

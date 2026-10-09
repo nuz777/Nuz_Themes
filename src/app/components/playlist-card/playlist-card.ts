@@ -1,6 +1,8 @@
 import { Component, computed, inject, input, OnDestroy, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TracksService, type Playlist } from '../../services/tracks.service';
+import { AudioService } from '../../services/audio.service';
+import type { Track } from '../../models/track';
 
 const ROTATE_MS = 3500;
 
@@ -12,12 +14,24 @@ const ROTATE_MS = 3500;
 export class PlaylistCard implements OnDestroy {
   readonly playlist = input.required<Playlist>();
   private readonly tracksService = inject(TracksService);
+  protected readonly audio = inject(AudioService);
 
   protected readonly covers = computed(() => {
     const covers = this.playlist()
       .trackIds.map((id) => this.tracksService.getTrack(id)?.cover)
       .filter((c): c is string => !!c);
     return covers.length ? covers : [this.playlist().cover];
+  });
+
+  protected readonly isCurrentPlaylist = computed(() => {
+    const cur = this.audio.currentTrack();
+    if (!cur) return false;
+    const tracks = this.tracksService.getPlaylistTracks(this.playlist().id);
+    return tracks.some((t) => t.id === cur.id);
+  });
+
+  protected readonly isPlayingPlaylist = computed(() => {
+    return this.isCurrentPlaylist() && this.audio.isPlaying();
   });
 
   protected readonly activeIndex = signal(0);
@@ -35,5 +49,20 @@ export class PlaylistCard implements OnDestroy {
 
   ngOnDestroy(): void {
     if (this.timer) clearInterval(this.timer);
+  }
+
+  protected togglePlay(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const tracks = this.tracksService.getPlaylistTracks(this.playlist().id);
+    if (!tracks.length) return;
+
+    if (this.isPlayingPlaylist()) {
+      this.audio.pause();
+    } else if (this.isCurrentPlaylist()) {
+      this.audio.togglePlay();
+    } else {
+      this.audio.playQueue(tracks, 0);
+    }
   }
 }

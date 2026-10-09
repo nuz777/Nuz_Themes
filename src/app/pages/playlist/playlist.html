@@ -35,17 +35,79 @@
     </div>
   </div>
 
-  <div class="bg-gradient-to-b from-neutral-950 to-black p-4 sm:p-6">
-    <div class="mb-4 flex items-center gap-6">
-      <button
-        (click)="playAll()"
-        class="flex h-14 w-14 items-center justify-center rounded-full bg-white text-black transition hover:scale-105"
-        aria-label="Reproducir playlist"
-      >
-        <svg width="26" height="26" viewBox="0 0 24 24" class="fill-current translate-x-0.5">
-          <path d="M8 5v14l11-7L8 5z" />
-        </svg>
-      </button>
+  <div class="bg-gradient-to-b from-neutral-950 to-black px-2 py-4 sm:p-6">
+    <div class="mb-6 flex flex-wrap items-center gap-4 sm:gap-6">
+      <div class="relative flex items-center justify-center">
+        @if (isPlayingPlaylist()) {
+          <span
+            class="pointer-events-none absolute h-14 w-14 rounded-full bg-white/25 animate-soundwave-ring sm:h-16 sm:w-16"
+            aria-hidden="true"
+          ></span>
+          <span
+            class="pointer-events-none absolute h-14 w-14 rounded-full bg-white/15 animate-soundwave-ring [animation-delay:1.1s] sm:h-16 sm:w-16"
+            aria-hidden="true"
+          ></span>
+          <span
+            class="pointer-events-none absolute -inset-2 rounded-full bg-white/20 blur-md animate-play-glow"
+            aria-hidden="true"
+          ></span>
+        }
+
+        <button
+          (click)="togglePlayPlaylist()"
+          [attr.aria-label]="isPlayingPlaylist() ? 'Pausar playlist' : 'Reproducir playlist'"
+          [title]="isPlayingPlaylist() ? 'Pausar' : 'Reproducir'"
+          class="group relative flex h-14 w-14 items-center justify-center rounded-full bg-white text-black transition-all duration-300 ease-out hover:scale-110 active:scale-95 sm:h-16 sm:w-16"
+          [class.shadow-[0_0_28px_rgba(255,255,255,0.7)]]="isPlayingPlaylist()"
+          [class.shadow-xl]="!isPlayingPlaylist()"
+          [class.shadow-black/60]="!isPlayingPlaylist()"
+          [class.hover:shadow-[0_0_35px_rgba(255,255,255,0.9)]]="isPlayingPlaylist()"
+        >
+          <span class="relative z-10 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
+            @if (isPlayingPlaylist()) {
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                class="fill-current animate-play-pop"
+                aria-hidden="true"
+              >
+                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+              </svg>
+            } @else {
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                class="fill-current translate-x-0.5 animate-play-pop"
+                aria-hidden="true"
+              >
+                <path d="M8 5v14l11-7L8 5z" />
+              </svg>
+            }
+          </span>
+        </button>
+      </div>
+
+      @if (isPlayingPlaylist()) {
+        <div
+          class="flex items-center gap-2.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 backdrop-blur-md animate-fade-in"
+        >
+          <span class="flex items-center gap-[3px] h-3.5" aria-hidden="true">
+            <span class="equalizer-bar !h-3"></span>
+            <span class="equalizer-bar !h-3"></span>
+            <span class="equalizer-bar !h-3"></span>
+          </span>
+          <span class="text-xs font-bold uppercase tracking-wider text-white">Reproduciendo</span>
+        </div>
+      } @else if (isCurrentPlaylist() && tracks().length > 0) {
+        <div
+          class="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-neutral-400 backdrop-blur-sm animate-fade-in"
+        >
+          <span class="h-2 w-2 rounded-full bg-neutral-400"></span>
+          <span>En pausa</span>
+        </div>
+      }
     </div>
 
     <app-track-list [tracks]="tracks()" [playlistId]="playlist.userCreated ? playlist.id : null" />

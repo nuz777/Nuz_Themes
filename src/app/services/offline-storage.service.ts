@@ -66,6 +66,12 @@ export class OfflineStorageService {
     await this.putBlob(db, { id, blob, savedAt: Date.now() });
   }
 
+  async storeUserCover(id: string, blob: Blob): Promise<void> {
+    if (!this.isSupported) return;
+    const db = await this.getDb();
+    await this.putBlob(db, { id: `cover-${id}`, blob, savedAt: Date.now() });
+  }
+
   registerObjectUrl(id: string, url: string): void {
     this.objectUrls.set(id, url);
   }
@@ -94,6 +100,32 @@ export class OfflineStorageService {
     return null;
   }
 
+  getUserCoverUrl(id: string): string | null {
+    const key = `cover-${id}`;
+    if (this.objectUrls.has(key)) return this.objectUrls.get(key)!;
+    if (!this.isSupported) return null;
+    void this.loadUserCoverUrl(id);
+    return null;
+  }
+
+  async loadUserCoverUrl(id: string): Promise<string | null> {
+    const key = `cover-${id}`;
+    if (this.objectUrls.has(key)) return this.objectUrls.get(key)!;
+    if (!this.isSupported) return null;
+    try {
+      const db = await this.getDb();
+      const stored = await this.getBlob(db, key);
+      if (stored) {
+        const url = URL.createObjectURL(stored.blob);
+        this.objectUrls.set(key, url);
+        return url;
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
   removeUserTrack(id: string): void {
     const cached = this.objectUrls.get(id);
     if (cached) {
@@ -104,9 +136,21 @@ export class OfflineStorageService {
       }
       this.objectUrls.delete(id);
     }
+    const cachedCover = this.objectUrls.get(`cover-${id}`);
+    if (cachedCover) {
+      try {
+        URL.revokeObjectURL(cachedCover);
+      } catch {
+        // ignore
+      }
+      this.objectUrls.delete(`cover-${id}`);
+    }
     if (!this.isSupported) return;
     this.getDb()
-      .then((db) => this.deleteBlob(db, id))
+      .then(async (db) => {
+        await this.deleteBlob(db, id);
+        await this.deleteBlob(db, `cover-${id}`).catch(() => {});
+      })
       .catch(() => {
         // ignore
       });

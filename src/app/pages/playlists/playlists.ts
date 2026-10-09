@@ -59,6 +59,9 @@ export class PlaylistsPage {
   }
 
   protected triggerCoverSelect(): void {
+    if (this.coverFileInput?.nativeElement) {
+      this.coverFileInput.nativeElement.value = '';
+    }
     this.coverFileInput?.nativeElement.click();
   }
 
@@ -82,20 +85,48 @@ export class PlaylistsPage {
     const file = input.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      this.uploadError.set('El archivo de carátula debe ser una imagen');
+    const isImage = (file.type && file.type.startsWith('image/')) ||
+      /\.(png|jpe?g|webp|gif|svg|avif|heic|bmp|ico)$/i.test(file.name);
+
+    if (!isImage) {
+      this.uploadError.set('Por favor, selecciona un archivo de imagen válido');
+      input.value = '';
       return;
     }
 
     this.selectedCoverFile.set(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.coverPreview.set(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    this.uploadError.set(null);
+
+    if (this.coverPreview()?.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(this.coverPreview()!);
+      } catch {
+        // ignore
+      }
+    }
+
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      this.coverPreview.set(previewUrl);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.coverPreview.set(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    input.value = '';
   }
 
   protected removeCover(): void {
+    if (this.coverPreview()?.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(this.coverPreview()!);
+      } catch {
+        // ignore
+      }
+    }
     this.selectedCoverFile.set(null);
     this.coverPreview.set(null);
     if (this.coverFileInput?.nativeElement) {
@@ -144,6 +175,13 @@ export class PlaylistsPage {
   }
 
   private resetUploadForm(): void {
+    if (this.coverPreview()?.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(this.coverPreview()!);
+      } catch {
+        // ignore
+      }
+    }
     this.selectedAudioFile.set(null);
     this.selectedCoverFile.set(null);
     this.coverPreview.set(null);

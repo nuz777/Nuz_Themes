@@ -1,22 +1,22 @@
-<div class="rounded-lg px-3">
-  <div class="flex items-center gap-2 border-b border-neutral-800 px-4 pb-2 text-xs font-bold text-neutral-400 uppercase tracking-wider">
+<div class="w-full px-0 sm:px-3">
+  <div class="flex items-center gap-2 border-b border-neutral-800 px-2 sm:px-4 pb-2 text-xs font-bold text-neutral-400 uppercase tracking-wider">
     <span class="w-4 shrink-0 text-right">#</span>
     <span class="min-w-0 flex-1">Título</span>
     <span class="hidden w-28 shrink-0 sm:block">Álbum</span>
-    <span class="w-12 shrink-0 text-right">⏱</span>
+    <span class="w-11 shrink-0 text-right sm:w-12">⏱</span>
   </div>
 
-  <ul class="mt-2 space-y-1">
+  <ul class="mt-2 space-y-1.5 sm:space-y-1">
     @for (track of tracks(); track track.id; let i = $index) {
-      <li class="group flex items-center gap-1 rounded-md pr-1 transition hover:bg-neutral-800/80">
+      <li class="group flex items-center gap-1 rounded-xl p-1 transition hover:bg-neutral-800/80 active:bg-neutral-800/90 sm:rounded-md sm:p-0 sm:pr-1">
         <button
           (click)="playTrack(track, i)"
           (pointerenter)="warm(track)"
           (focus)="warm(track)"
           (touchstart)="warm(track)"
-          class="flex min-w-0 flex-1 items-center gap-2 py-2 pl-4 text-left sm:gap-4"
+          class="flex min-w-0 flex-1 items-center gap-2.5 py-2.5 pl-2 text-left sm:gap-4 sm:py-2 sm:pl-4"
         >
-          <span class="w-4 shrink-0 text-center text-sm tabular-nums text-neutral-400">
+          <span class="w-4 shrink-0 text-center text-xs tabular-nums text-neutral-400 sm:text-sm">
             @if (audio.currentTrack()?.id === track.id && audio.isPlaying()) {
               <span class="flex justify-center gap-[2px]">
                 <span class="equalizer-bar"></span>
@@ -40,23 +40,23 @@
             <img
               [src]="track.cover"
               [alt]="track.title"
-              class="h-10 w-10 shrink-0 rounded bg-neutral-800 object-cover"
+              class="h-11 w-11 shrink-0 rounded-lg bg-neutral-800 object-cover shadow-sm sm:h-10 sm:w-10 sm:rounded"
               loading="lazy"
             />
             <span class="min-w-0">
               <span
                 [class.text-white]="audio.currentTrack()?.id === track.id"
-                class="block truncate text-sm font-semibold text-neutral-100"
+                class="block truncate text-sm font-semibold text-neutral-100 sm:font-medium leading-tight"
               >
                 {{ track.title }}
               </span>
-              <span class="block truncate text-sm text-neutral-400">{{ track.artist }}</span>
+              <span class="block truncate text-xs text-neutral-400 sm:text-sm mt-0.5">{{ track.artist }}</span>
             </span>
           </span>
 
           <span class="hidden w-28 shrink-0 truncate text-sm text-neutral-400 sm:block">{{ track.album }}</span>
 
-          <span class="w-12 shrink-0 text-right text-sm tabular-nums text-neutral-400">
+          <span class="w-11 shrink-0 text-right text-xs tabular-nums text-neutral-400 sm:w-12 sm:text-sm">
             {{ formatTime(durationOf(track)) }}
           </span>
         </button>
