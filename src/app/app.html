@@ -7,7 +7,7 @@
       <span class="font-pixel text-sm tracking-tight">Nuz_Themes</span>
     </a>
     <div class="flex items-center gap-1">
-      @if (!audio.showNowPlaying()) {
+      @if (!audio.showNowPlaying() && !isPlaylistsRoute()) {
       <button
         (click)="openSearch()"
         class="flex h-9 w-9 items-center justify-center rounded-md text-neutral-300 transition hover:bg-neutral-900 hover:text-white"
@@ -42,7 +42,7 @@
     </div>
   </header>
 
-  @if (!audio.showNowPlaying() && mobileSearchOpen()) {
+  @if (!audio.showNowPlaying() && !isPlaylistsRoute() && mobileSearchOpen()) {
     <div class="fixed inset-x-3 top-16 z-[60] md:hidden">
       <div class="overflow-hidden rounded-2xl border border-white/10 bg-neutral-950/95 shadow-2xl shadow-black backdrop-blur-xl">
         <div class="flex items-center gap-2 border-b border-white/10 px-4">
@@ -130,7 +130,7 @@
       class="relative min-w-0 min-h-0 flex-1 rounded-lg bg-neutral-950"
       [style.overflow]="audio.showNowPlaying() ? 'hidden' : 'auto'"
     >
-      @if (!audio.showNowPlaying()) {
+      @if (!audio.showNowPlaying() && !isPlaylistsRoute()) {
       <div class="pointer-events-none absolute inset-x-0 top-0 z-30 hidden justify-end p-4 md:flex">
         <div class="pointer-events-auto relative w-full max-w-xl">
           <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-black/70 px-4 shadow-xl shadow-black/20 backdrop-blur-xl">

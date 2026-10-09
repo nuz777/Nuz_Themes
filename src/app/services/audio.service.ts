@@ -113,9 +113,17 @@ export class AudioService {
 
   private async loadAndPlay(track: Track): Promise<void> {
     // Se pide la fuente sin esperar a IndexedDB: el audio online es el caso común.
-    const src = this.offline.isDownloaded(track.id)
-      ? await this.offline.resolveSourceUrl(track)
-      : track.audioUrl;
+    let src: string;
+    if (track.id.startsWith('user-')) {
+      src = await this.offline.resolveSourceUrl(track);
+      if (!src) {
+        src = track.audioUrl;
+      }
+    } else {
+      src = this.offline.isDownloaded(track.id)
+        ? await this.offline.resolveSourceUrl(track)
+        : track.audioUrl;
+    }
     if (this.currentTrack()?.id !== track.id) return;
 
     this.audio!.preload = 'auto';
@@ -143,6 +151,18 @@ export class AudioService {
     } else {
       void this.audio.play();
     }
+  }
+
+  pause(): void {
+    if (!this.audio) return;
+    this.audio.pause();
+  }
+
+  stop(): void {
+    if (!this.audio) return;
+    this.audio.pause();
+    this.audio.currentTime = 0;
+    this.currentTrack.set(null);
   }
 
   next(): void {

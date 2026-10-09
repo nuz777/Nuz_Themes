@@ -1,5 +1,5 @@
 import { Component, computed, ElementRef, HostListener, inject, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
-import { Router, RouterOutlet, RouterLink, NavigationStart } from '@angular/router';
+import { Router, RouterOutlet, RouterLink, NavigationStart, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Sidebar } from './components/sidebar/sidebar';
 import { PlayerBar } from './components/player-bar/player-bar';
@@ -23,12 +23,19 @@ export class App implements OnInit, OnDestroy {
   protected readonly tracksService = inject(TracksService);
   protected readonly audio = inject(AudioService);
   private readonly mediaSession = inject(MediaSessionService);
+  private readonly router = inject(Router);
 
   protected readonly sidebarOpen = signal(false);
   protected readonly sidebarCollapsed = signal(false);
   protected readonly isFullscreen = signal(false);
   protected readonly searchQuery = signal('');
   protected readonly mobileSearchOpen = signal(false);
+  protected readonly currentUrl = signal(this.router.url);
+
+  protected readonly isPlaylistsRoute = computed(() => {
+    const url = this.currentUrl();
+    return url.startsWith('/playlist');
+  });
 
   protected readonly searchResults = computed(() => {
     const query = this.searchQuery().trim().toLocaleLowerCase();
@@ -56,10 +63,16 @@ export class App implements OnInit, OnDestroy {
     if (!this.sidebarCollapsed()) this.sidebarCollapsed.set(true);
   }
 
-  private readonly routerSub = inject(Router).events.subscribe((event) => {
+  private readonly routerSub = this.router.events.subscribe((event) => {
     if (event instanceof NavigationStart) {
       this.audio.closeNowPlaying();
       this.sidebarOpen.set(false);
+    }
+    if (event instanceof NavigationEnd) {
+      this.currentUrl.set(event.urlAfterRedirects || event.url);
+      if (this.isPlaylistsRoute()) {
+        this.closeSearch();
+      }
     }
   });
 

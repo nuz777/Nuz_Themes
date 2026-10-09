@@ -196,6 +196,19 @@ import { PipButton } from '../pip-button/pip-button';
       }
     }
 
+    @media (max-width: 768px) {
+      .np-star {
+        animation: none !important;
+      }
+      .np-sun,
+      .np-sun-light {
+        animation: none !important;
+      }
+      .np-wave {
+        animation: none !important;
+      }
+    }
+
     .eq-modal-enter,
     .eq-modal-leave {
       animation: none;

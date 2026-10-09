@@ -60,6 +60,58 @@ export class OfflineStorageService {
     return promise;
   }
 
+  async storeUserTrack(id: string, blob: Blob): Promise<void> {
+    if (!this.isSupported) return;
+    const db = await this.getDb();
+    await this.putBlob(db, { id, blob, savedAt: Date.now() });
+  }
+
+  registerObjectUrl(id: string, url: string): void {
+    this.objectUrls.set(id, url);
+  }
+
+  getUserTrackUrl(id: string): string | null {
+    if (this.objectUrls.has(id)) return this.objectUrls.get(id)!;
+    if (!this.isSupported) return null;
+    void this.loadUserTrackUrl(id);
+    return null;
+  }
+
+  async loadUserTrackUrl(id: string): Promise<string | null> {
+    if (this.objectUrls.has(id)) return this.objectUrls.get(id)!;
+    if (!this.isSupported) return null;
+    try {
+      const db = await this.getDb();
+      const stored = await this.getBlob(db, id);
+      if (stored) {
+        const url = URL.createObjectURL(stored.blob);
+        this.objectUrls.set(id, url);
+        return url;
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  removeUserTrack(id: string): void {
+    const cached = this.objectUrls.get(id);
+    if (cached) {
+      try {
+        URL.revokeObjectURL(cached);
+      } catch {
+        // ignore
+      }
+      this.objectUrls.delete(id);
+    }
+    if (!this.isSupported) return;
+    this.getDb()
+      .then((db) => this.deleteBlob(db, id))
+      .catch(() => {
+        // ignore
+      });
+  }
+
   async remove(track: Track): Promise<void> {
     if (!this.isSupported) return;
 
@@ -87,15 +139,15 @@ export class OfflineStorageService {
 
     if (!this.isSupported) return track.audioUrl;
 
-    // Atajo: si no hay nada descargado no se abre la base, así el play no espera.
-    if (!this.hasDownloads()) return track.audioUrl;
-
     try {
       const db = await this.getDb();
       const stored = await this.getBlob(db, track.id);
       if (stored) {
         const url = URL.createObjectURL(stored.blob);
         this.objectUrls.set(track.id, url);
+        if (track.id.startsWith('user-')) {
+          return url;
+        }
         this.status.update((prev) =>
           prev[track.id] === 'downloaded' ? prev : { ...prev, [track.id]: 'downloaded' },
         );

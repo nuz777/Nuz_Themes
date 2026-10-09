@@ -1,5 +1,7 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import type { Track } from '../models/track';
+import { OfflineStorageService } from './offline-storage.service';
+import { ToastService } from './toast.service';
 
 export interface Playlist {
   id: string;
@@ -10,15 +12,31 @@ export interface Playlist {
   userCreated?: boolean;
 }
 
+export interface UserTrackMetadata {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  cover: string; // dataURL o ruta
+  duration: number;
+  createdAt: number;
+}
+
 const cover = (seed: string) => `https://picsum.photos/seed/${seed}/300/300?grayscale`;
+const USER_TRACKS_KEY = 'nuz-user-tracks';
 
 @Injectable({ providedIn: 'root' })
 export class TracksService {
   readonly tracks = signal<Track[]>([]);
   readonly playlists = signal<Playlist[]>([]);
+  readonly userTracks = signal<UserTrackMetadata[]>([]);
+
+  private readonly offline = inject(OfflineStorageService);
+  private readonly toast = inject(ToastService);
 
   constructor() {
-    this.tracks.set(this.buildTracks());
+    this.userTracks.set(this.readUserTracks());
+    this.tracks.set([...this.buildUserTracks(), ...this.buildTracks()]);
     this.playlists.set([...this.buildPlaylists(), ...this.readUserPlaylists()]);
   }
 
@@ -92,6 +110,213 @@ export class TracksService {
     return playlist.trackIds
       .map((tid) => this.getTrack(tid))
       .filter((t): t is Track => !!t);
+  }
+
+  getAllTracks(): Track[] {
+    return this.tracks();
+  }
+
+  getUserTracks(): Track[] {
+    return this.tracks().filter((t) => t.id.startsWith('user-'));
+  }
+
+  getUserTrackCount(): number {
+    return this.userTracks().length;
+  }
+
+  async addUserTrack(params: {
+    file: File;
+    cover?: File | null;
+    title?: string;
+    artist?: string;
+    album?: string;
+  }): Promise<Track | null> {
+    if (typeof window === 'undefined') return null;
+
+    const file = params.file;
+    const mimeType = file.type || 'audio/mpeg';
+    const audioBlob = new Blob([await file.arrayBuffer()], { type: mimeType });
+
+    const id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const [coverDataUrl, duration] = await Promise.all([
+      this.processCoverImage(params.cover || null),
+      this.extractAudioDuration(audioBlob),
+    ]);
+
+    const metadata: UserTrackMetadata = {
+      id,
+      title: params.title?.trim() || this.getBaseName(file.name),
+      artist: params.artist?.trim() || 'Artista desconocido',
+      album: params.album?.trim() || 'Música local',
+      cover: coverDataUrl,
+      duration,
+      createdAt: Date.now(),
+    };
+
+    const audioUrl = URL.createObjectURL(audioBlob);
+    this.offline.registerObjectUrl(id, audioUrl);
+
+    try {
+      await this.offline.storeUserTrack(id, audioBlob);
+    } catch {
+      // Audio can continue being served via in-memory URL
+    }
+
+    this.userTracks.update((items) => [metadata, ...items]);
+    this.persistUserTracks();
+
+    const track: Track = {
+      id,
+      title: metadata.title,
+      artist: metadata.artist,
+      album: metadata.album,
+      cover: metadata.cover,
+      audioUrl,
+      duration: metadata.duration,
+    };
+
+    this.tracks.update((tracks) => [track, ...tracks]);
+    this.toast.show(`"${track.title}" guardada en tu navegador`, 'success', track.cover, track.title);
+    return track;
+  }
+
+  removeUserTrack(id: string): boolean {
+    const track = this.tracks().find((t) => t.id === id);
+    const exists = this.userTracks().some((meta) => meta.id === id);
+    if (!exists) return false;
+
+    this.userTracks.update((items) => items.filter((item) => item.id !== id));
+    this.persistUserTracks();
+
+    this.tracks.update((tracks) => tracks.filter((t) => t.id !== id));
+
+    let playlistsModified = false;
+    this.playlists.update((playlists) =>
+      playlists.map((pl) => {
+        if (!pl.userCreated || !pl.trackIds.includes(id)) return pl;
+        playlistsModified = true;
+        return { ...pl, trackIds: pl.trackIds.filter((tid) => tid !== id) };
+      }),
+    );
+    if (playlistsModified) {
+      this.persistUserPlaylists();
+    }
+
+    try {
+      this.offline.removeUserTrack(id);
+    } catch {
+      // no-op
+    }
+
+    if (track) {
+      this.toast.show(`"${track.title}" eliminada de tu navegador`, 'success');
+    }
+
+    return true;
+  }
+
+  private buildUserTracks(): Track[] {
+    return this.userTracks().map((meta) => ({
+      id: meta.id,
+      title: meta.title,
+      artist: meta.artist,
+      album: meta.album,
+      cover: meta.cover,
+      audioUrl: this.offline.getUserTrackUrl(meta.id) || '',
+      duration: meta.duration,
+    }));
+  }
+
+  private readUserTracks(): UserTrackMetadata[] {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = window.localStorage.getItem(USER_TRACKS_KEY);
+      if (!raw) return [];
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((item): item is UserTrackMetadata => {
+        if (!item || typeof item !== 'object') return false;
+        const t = item as Partial<UserTrackMetadata>;
+        return typeof t.id === 'string' && typeof t.title === 'string' && typeof t.cover === 'string';
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  private persistUserTracks(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(USER_TRACKS_KEY, JSON.stringify(this.userTracks()));
+    } catch {
+      // Fallback in case of storage quota issues
+    }
+  }
+
+  private async processCoverImage(file: File | null): Promise<string> {
+    if (!file) return '/caratulas/image.webp';
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 400;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(reader.result as string);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.onerror = () => resolve('/caratulas/image.webp');
+        img.src = reader.result as string;
+      };
+      reader.onerror = () => resolve('/caratulas/image.webp');
+      reader.readAsDataURL(file);
+    });
+  }
+
+  private async extractAudioDuration(blob: Blob): Promise<number> {
+    if (typeof Audio === 'undefined') return 0;
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio();
+      audio.preload = 'metadata';
+      const clean = () => {
+        URL.revokeObjectURL(url);
+        audio.removeAttribute('src');
+        audio.load();
+      };
+      audio.onloadedmetadata = () => {
+        const dur = Math.round(audio.duration) || 0;
+        clean();
+        resolve(dur);
+      };
+      audio.onerror = () => {
+        clean();
+        resolve(0);
+      };
+      audio.src = url;
+    });
+  }
+
+  private getBaseName(name: string): string {
+    return name.replace(/\.[^/.]+$/, '').trim() || name.trim();
   }
 
   private readUserPlaylists(): Playlist[] {

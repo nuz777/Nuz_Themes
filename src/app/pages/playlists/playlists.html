@@ -1,16 +1,28 @@
 <section class="p-4 sm:p-6">
-  <header class="mb-6 flex items-end justify-between gap-4">
+  <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
     <div>
       <h1 class="text-2xl font-bold text-white sm:text-3xl">Tu biblioteca</h1>
-      <p class="mt-1 text-neutral-400">Todas tus playlists guardadas.</p>
+      <p class="mt-1 text-neutral-400">Tus playlists y canciones guardadas en este navegador.</p>
     </div>
-    <button
-      (click)="creating.set(!creating())"
-      class="flex shrink-0 items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-black transition hover:bg-neutral-200"
-    >
-      <span class="text-lg leading-none">+</span>
-      Nueva playlist
-    </button>
+    <div class="flex flex-wrap gap-2">
+      <button
+        (click)="creating.set(!creating())"
+        class="flex shrink-0 items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-black transition hover:bg-neutral-200"
+      >
+        <span class="text-lg leading-none">+</span>
+        Nueva playlist
+      </button>
+      <button
+        (click)="openUploadModal()"
+        type="button"
+        class="flex shrink-0 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/20"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+        </svg>
+        Subir música
+      </button>
+    </div>
   </header>
 
   @if (creating()) {
@@ -31,11 +43,277 @@
     </form>
   }
 
-  <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-    @for (playlist of tracksService.playlists(); track playlist.id) {
-      <app-playlist-card [playlist]="playlist" />
-    }
+  <!-- Sección de Playlists -->
+  <div>
+    <h2 class="mb-4 text-lg font-bold text-white sm:text-xl">Tus playlists</h2>
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      @for (playlist of tracksService.playlists(); track playlist.id) {
+        <app-playlist-card [playlist]="playlist" />
+      }
+    </div>
   </div>
+
+  <!-- Sección de Música Local (Del Dispositivo) -->
+  <section class="mt-12">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <h2 class="text-lg font-bold text-white sm:text-xl">Música de tu dispositivo</h2>
+          <span class="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-neutral-300">
+            {{ userTracks().length }}
+          </span>
+        </div>
+        <p class="mt-1 text-xs text-neutral-400 sm:text-sm">
+          Archivos guardados en tu navegador (IndexedDB) para escuchar sin conexión. No se suben a ningún servidor.
+        </p>
+      </div>
+
+      <button
+        (click)="openUploadModal()"
+        class="flex items-center gap-2 rounded-full border border-white/20 bg-transparent px-3 py-1.5 text-xs font-semibold text-neutral-200 transition hover:bg-white/10 hover:text-white"
+      >
+        <span class="text-base leading-none">+</span>
+        Agregar canción
+      </button>
+    </div>
+
+    @if (userTracks().length) {
+      <app-track-list [tracks]="userTracks()" />
+    } @else {
+      <div class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center sm:p-12">
+        <div class="flex h-14 w-14 items-center justify-center rounded-full bg-white/5 text-neutral-400">
+          <svg width="28" height="28" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+          </svg>
+        </div>
+        <p class="mt-4 text-base font-bold text-white">Aún no has agregado música desde tu dispositivo</p>
+        <p class="mt-1 max-w-md text-xs leading-relaxed text-neutral-400 sm:text-sm">
+          Puedes agregar tus canciones MP3 y asignarles una carátula personalizada. Se almacenarán 100% en tu navegador y podrás reproducirlas o agregarlas a tus playlists.
+        </p>
+        <button
+          (click)="openUploadModal()"
+          class="mt-5 flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black transition hover:bg-neutral-200"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+          </svg>
+          Subir mi primera canción
+        </button>
+      </div>
+    }
+  </section>
+
+  <!-- Modal para Agregar Música y Carátula -->
+  @if (uploadModalOpen()) {
+    <div
+      class="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
+      (click)="closeUploadModal()"
+    >
+      <div
+        class="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-neutral-950 p-6 shadow-2xl shadow-black"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+          <div>
+            <h2 class="text-xl font-bold text-white">Agregar música desde tu dispositivo</h2>
+            <p class="mt-1 text-xs text-neutral-400">
+              Guarda tus archivos locales en este navegador sin subirlos a ningún servidor.
+            </p>
+          </div>
+          <button
+            (click)="closeUploadModal()"
+            class="flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-white"
+            aria-label="Cerrar ventana"
+          >
+            <span class="text-2xl leading-none">&times;</span>
+          </button>
+        </div>
+
+        <div class="mt-5 space-y-5">
+          <!-- Selección de Archivo de Audio -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-300">
+              Archivo de audio *
+            </label>
+            <input
+              #audioFileInput
+              type="file"
+              accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac,.aac"
+              class="hidden"
+              (change)="onAudioSelected($event)"
+            />
+
+            @if (selectedAudioFile(); as file) {
+              <div class="mt-2 flex items-center justify-between rounded-xl border border-white/15 bg-white/5 p-3">
+                <div class="flex min-w-0 items-center gap-3">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white">
+                    <svg width="20" height="20" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
+                      <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                    </svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold text-white">{{ file.name }}</p>
+                    <p class="text-xs text-neutral-400">{{ formatFileSize(file.size) }}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  (click)="triggerAudioSelect()"
+                  class="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-neutral-300 transition hover:bg-white/10 hover:text-white"
+                >
+                  Cambiar
+                </button>
+              </div>
+            } @else {
+              <div
+                (click)="triggerAudioSelect()"
+                class="mt-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-6 text-center transition hover:border-white/40 hover:bg-white/[0.05]"
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" class="fill-neutral-400" aria-hidden="true">
+                  <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" />
+                </svg>
+                <p class="mt-2 text-sm font-bold text-white">Seleccionar canción de tu dispositivo</p>
+                <p class="mt-0.5 text-xs text-neutral-400">Formatos compatibles: MP3, WAV, OGG, M4A, FLAC</p>
+              </div>
+            }
+          </div>
+
+          <!-- Selección de Carátula -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-300">
+              Carátula (opcional)
+            </label>
+            <input
+              #coverFileInput
+              type="file"
+              accept="image/*"
+              class="hidden"
+              (change)="onCoverSelected($event)"
+            />
+
+            <div class="mt-2 flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-neutral-900">
+                <img
+                  [src]="coverPreview() || '/caratulas/image.webp'"
+                  alt="Vista previa de carátula"
+                  class="h-full w-full object-cover"
+                />
+              </div>
+
+              <div class="flex-1">
+                <p class="text-xs text-neutral-400">
+                  @if (selectedCoverFile()) {
+                    Carátula personalizada seleccionada.
+                  } @else {
+                    Si no eliges una imagen, se utilizará una carátula predeterminada.
+                  }
+                </p>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    (click)="triggerCoverSelect()"
+                    class="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+                  >
+                    {{ selectedCoverFile() ? 'Cambiar imagen' : 'Elegir imagen' }}
+                  </button>
+                  @if (selectedCoverFile()) {
+                    <button
+                      type="button"
+                      (click)="removeCover()"
+                      class="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-red-500/10"
+                    >
+                      Quitar
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metadatos de la canción -->
+          <div class="space-y-3">
+            <div>
+              <label for="trackTitleInput" class="block text-xs font-bold uppercase tracking-wider text-neutral-300">
+                Título de la canción *
+              </label>
+              <input
+                id="trackTitleInput"
+                [value]="trackTitle()"
+                (input)="trackTitle.set($any($event.target).value)"
+                placeholder="Nombre del tema"
+                class="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-neutral-500 focus:border-white/30"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label for="trackArtistInput" class="block text-xs font-bold uppercase tracking-wider text-neutral-300">
+                  Artista
+                </label>
+                <input
+                  id="trackArtistInput"
+                  [value]="trackArtist()"
+                  (input)="trackArtist.set($any($event.target).value)"
+                  placeholder="Artista o grupo"
+                  class="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-neutral-500 focus:border-white/30"
+                />
+              </div>
+
+              <div>
+                <label for="trackAlbumInput" class="block text-xs font-bold uppercase tracking-wider text-neutral-300">
+                  Álbum
+                </label>
+                <input
+                  id="trackAlbumInput"
+                  [value]="trackAlbum()"
+                  (input)="trackAlbum.set($any($event.target).value)"
+                  placeholder="Álbum o colección"
+                  class="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-neutral-500 focus:border-white/30"
+                />
+              </div>
+            </div>
+          </div>
+
+          @if (uploadError()) {
+            <p class="rounded-lg bg-red-500/15 p-2.5 text-xs font-semibold text-red-300">
+              {{ uploadError() }}
+            </p>
+          }
+
+          <div class="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs text-neutral-400">
+            🔒 <strong class="text-neutral-300">Privacidad local:</strong> Esta canción y su carátula se guardan únicamente en el almacenamiento local de tu navegador. No consumen datos de subida ni se transmiten a ningún servidor.
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3 border-t border-white/10 pt-4">
+          <button
+            type="button"
+            (click)="closeUploadModal()"
+            [disabled]="isSaving()"
+            class="rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-neutral-300 transition hover:bg-white/10 hover:text-white disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            (click)="saveUserTrack()"
+            [disabled]="!selectedAudioFile() || isSaving()"
+            class="flex items-center gap-2 rounded-lg bg-white px-5 py-2 text-sm font-bold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            @if (isSaving()) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="animate-spin text-black">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25" />
+                <path d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z" fill="currentColor" class="opacity-75" />
+              </svg>
+              <span>Guardando...</span>
+            } @else {
+              <span>Guardar canción</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 
   <footer class="mt-12 flex flex-col items-center gap-3 border-t border-neutral-800 pt-8 text-center">
     <img src="favicom.ico" alt="Nuz_Themes" class="h-12 w-12 rounded object-cover" />

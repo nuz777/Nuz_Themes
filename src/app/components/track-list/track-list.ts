@@ -29,7 +29,7 @@ export class TrackList {
   }
 
   protected durationOf(track: Track): number {
-    return this.durations.durationOf(track.id);
+    return track.duration || this.durations.durationOf(track.id);
   }
 
   protected warm(track: Track): void {
@@ -50,6 +50,14 @@ export class TrackList {
     if (this.tracksService.removeTrackFromPlaylist(playlistId, track.id)) {
       this.toast.show(`Quitada de "${playlist.name}"`, 'success', track.cover, 'Playlist actualizada');
     }
+  }
+
+  protected removeUserTrack(track: Track, event: Event): void {
+    event.stopPropagation();
+    if (this.audio.currentTrack()?.id === track.id) {
+      this.audio.pause();
+    }
+    this.tracksService.removeUserTrack(track.id);
   }
 
   protected formatTime(seconds: number): string {
