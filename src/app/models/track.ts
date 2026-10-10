@@ -19,4 +19,5 @@ export interface Track {
   backgroundColor?: string;
   showSun?: boolean;
   showStars?: boolean;
+  showSnow?: boolean;
 }

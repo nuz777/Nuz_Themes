@@ -698,6 +698,9 @@ export class TracksService {
         album: 'Animation',
         cover: '/caratulas/cult.png',
         audioUrl: '/music/CultMember.mp3',
+        backgroundColor: '#0a1728',
+        showSnow: true,
+        hideRhythmBars: true,
         duration: 0,
       },
       {

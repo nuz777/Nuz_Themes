@@ -76,6 +76,64 @@
       </div>
     }
 
+    <!-- Fondo Nevado Tranquilo: Copos de nieve flotando y cayendo lentamente -->
+    @if (showSnow()) {
+      <div
+        class="np-snow-container pointer-events-none absolute inset-0 overflow-hidden"
+        aria-hidden="true"
+        [class.np-wave-paused]="!audio.isPlaying()"
+      >
+        <!-- Resplandor y bruma invernal suave -->
+        <div class="np-snow-mist"></div>
+
+        <!-- Copos de nieve animados -->
+        @for (flake of snowflakes; track $index) {
+          <span
+            class="np-snowflake-sway"
+            [style.left.%]="flake.left"
+            [style.--sway]="flake.sway + 'px'"
+            [style.--sway-dur]="flake.swayDur + 'ms'"
+          >
+            <span
+              class="np-snowflake"
+              [class.is-crystal]="flake.isCrystal"
+              [style.width.px]="flake.size"
+              [style.height.px]="flake.size"
+              [style.--dur]="flake.dur + 'ms'"
+              [style.--delay]="flake.delay + 'ms'"
+              [style.opacity]="flake.opacity"
+              [style.filter]="flake.blur ? 'blur(' + flake.blur + 'px)' : null"
+            >
+              @if (flake.isCrystal) {
+                <svg viewBox="0 0 24 24" class="h-full w-full fill-white/95">
+                  <path d="M11 2v4.07a7.02 7.02 0 0 0-2.07.85l-2.88-2.88-1.42 1.42 2.88 2.88c-.37.63-.66 1.33-.85 2.07H2v2h4.66c.19.74.48 1.44.85 2.07l-2.88 2.88 1.42 1.42 2.88-2.88c.63.37 1.33.66 2.07.85V22h2v-4.66c.74-.19 1.44-.48 2.07-.85l2.88 2.88 1.42-1.42-2.88-2.88c.37-.63.66-1.33.85-2.07H22v-2h-4.66a7.02 7.02 0 0 0-.85-2.07l2.88-2.88-1.42-1.42-2.88 2.88A7.02 7.02 0 0 0 13 6.07V2h-2z" />
+                </svg>
+              }
+            </span>
+          </span>
+        }
+
+        <!-- Silueta de colinas nevadas en la base -->
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-44 overflow-hidden">
+          <svg
+            class="absolute bottom-0 h-full w-full text-[#081321]/60"
+            preserveAspectRatio="none"
+            viewBox="0 0 1200 160"
+          >
+            <path d="M0,100 C180,60 360,110 560,70 C760,30 960,95 1200,60 L1200,160 L0,160 Z" fill="currentColor" />
+          </svg>
+          <svg
+            class="absolute bottom-0 h-28 w-full text-[#0a1829]/80"
+            preserveAspectRatio="none"
+            viewBox="0 0 1200 120"
+          >
+            <path d="M0,50 C220,80 420,30 680,60 C920,90 1060,40 1200,60 L1200,120 L0,120 Z" fill="currentColor" />
+          </svg>
+          <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white/10 to-transparent"></div>
+        </div>
+      </div>
+    }
+
     <!-- Olas de fondo: para las canciones de relax_time -->
     @if (blurBackground()) {
       <div

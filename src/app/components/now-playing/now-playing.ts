@@ -99,6 +99,92 @@ import { PipButton } from '../pip-button/pip-button';
         animation: none;
         opacity: var(--o, 0.5);
       }
+      .np-snowflake,
+      .np-snowflake-sway,
+      .np-snow-mist {
+        animation: none;
+      }
+    }
+
+    .np-snow-container {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .np-snow-mist {
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 60%;
+      pointer-events: none;
+      background: radial-gradient(
+        ellipse at 50% 90%,
+        rgba(155, 195, 235, 0.14) 0%,
+        rgba(120, 165, 215, 0.05) 50%,
+        transparent 80%
+      );
+      animation: np-mist-breathe 9s ease-in-out infinite alternate;
+    }
+
+    @keyframes np-mist-breathe {
+      0% {
+        opacity: 0.5;
+        transform: scale(0.98);
+      }
+      100% {
+        opacity: 0.9;
+        transform: scale(1.03);
+      }
+    }
+
+    .np-snowflake-sway {
+      position: absolute;
+      top: -20px;
+      pointer-events: none;
+      animation: np-snow-sway var(--sway-dur, 3.5s) ease-in-out infinite alternate;
+      animation-delay: var(--delay, 0ms);
+      will-change: transform;
+    }
+
+    .np-snowflake {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 7px rgba(255, 255, 255, 0.9);
+      animation: np-snow-fall var(--dur, 10s) linear infinite;
+      animation-delay: var(--delay, 0ms);
+      will-change: transform;
+    }
+
+    .np-snowflake svg {
+      filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+    }
+
+    .np-wave-paused .np-snowflake,
+    .np-wave-paused .np-snowflake-sway,
+    .np-wave-paused .np-snow-mist {
+      animation-play-state: paused;
+    }
+
+    @keyframes np-snow-fall {
+      0% {
+        transform: translateY(-20px);
+      }
+      100% {
+        transform: translateY(106vh);
+      }
+    }
+
+    @keyframes np-snow-sway {
+      0% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(var(--sway, 25px));
+      }
     }
 
     /* El velo y el sol comparten duración y easing para ir siempre sincronizados. */
@@ -256,6 +342,8 @@ export class NowPlaying {
 
   protected readonly showStars = computed(() => this.audio.currentTrack()?.showStars === true);
 
+  protected readonly showSnow = computed(() => this.audio.currentTrack()?.showSnow === true);
+
   protected readonly shellStyle = computed(() =>
     this.blurBackground()
       ? {
@@ -293,15 +381,20 @@ export class NowPlaying {
     effect(() => {
       const track = this.audio.currentTrack();
       this.mobileLyricsOpen.set(false);
-      if (track?.backgroundColor) {
+      if (track?.showSnow) {
+        this.background.set(
+          'linear-gradient(180deg, #050b14 0%, #0a1728 40%, #11243d 70%, #07101d 100%)',
+        );
+        this.glowColor.set('#9ec5eb');
+      } else if (track?.backgroundColor) {
         this.background.set(this.ambient.gradientFromColor(track.backgroundColor));
       } else if (track) {
         void this.ambient.getGradient(track.cover).then((g) => this.background.set(g));
       }
-      if (track) {
+      if (track && !track.showSnow) {
         void this.ambient.getColor(track.cover).then((c) => this.glowColor.set(c));
       }
-      });
+    });
 
     effect((onCleanup) => {
       const url = this.audio.currentTrack()?.lyricsUrl;
@@ -380,6 +473,43 @@ export class NowPlaying {
     opacity: +(0.25 + r(i + 29) * 0.7).toFixed(2),
   }));
 })();
+
+  // Fondo nevado tranquilo: copos generados con física suave, sin peso de video
+  protected readonly snowflakes = (() => {
+    const r = (n: number): number => {
+      const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453;
+      return x - Math.floor(x);
+    };
+    return Array.from({ length: 65 }, (_, i) => {
+      const sizeRand = r(i + 13);
+      const size = +(
+        sizeRand < 0.6
+          ? 2.5 + r(i + 2) * 2.5
+          : sizeRand < 0.88
+            ? 5.5 + r(i + 3) * 3
+            : 9 + r(i + 4) * 4
+      ).toFixed(1);
+      const isCrystal = sizeRand >= 0.88;
+      const dur = Math.round(7500 + r(i + 7) * 8500); // 7.5s - 16s de caída tranquila
+      const delay = Math.round(-r(i + 11) * dur);
+      const sway = Math.round(15 + r(i + 17) * 32);
+      const swayDur = Math.round(2800 + r(i + 19) * 3000);
+      const opacity = +(0.35 + r(i + 23) * 0.55).toFixed(2);
+      const blur = size < 4 ? 0.6 : size > 8 ? 0 : 0.3;
+
+      return {
+        left: +(r(i + 1) * 100).toFixed(2),
+        size,
+        dur,
+        delay,
+        sway,
+        swayDur,
+        opacity,
+        blur,
+        isCrystal,
+      };
+    });
+  })();
 
 protected readonly waveLayers = [
     {
