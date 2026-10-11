@@ -100,4 +100,46 @@ describe('AudioService Persistence and AutoCache', () => {
     service.warm(sampleTrack);
     expect(spy).not.toHaveBeenCalled();
   });
+
+  it('should loop back to the first track when next() is called on the last track of a playlist', () => {
+    const queue = [sampleTrack, sampleTrack2];
+    service.playQueue(queue, 1); // Start at last track (index 1)
+    expect(service.queueIndex()).toBe(1);
+    expect(service.currentTrack()?.id).toBe(sampleTrack2.id);
+
+    service.next(); // Should loop back to track 0
+    expect(service.queueIndex()).toBe(0);
+    expect(service.currentTrack()?.id).toBe(sampleTrack.id);
+  });
+
+  it('should loop back to the last track when prev() is called on the first track', () => {
+    const queue = [sampleTrack, sampleTrack2];
+    service.playQueue(queue, 0); // Start at track 0
+    expect(service.queueIndex()).toBe(0);
+
+    service.prev(); // Should loop to last track (index 1)
+    expect(service.queueIndex()).toBe(1);
+    expect(service.currentTrack()?.id).toBe(sampleTrack2.id);
+  });
+
+  it('should toggle and persist live queue visibility', () => {
+    expect(service.showLiveQueue()).toBe(false);
+    service.toggleLiveQueue();
+    expect(service.showLiveQueue()).toBe(true);
+    expect(localStorage.getItem('nuz-player-show-live-queue')).toBe('true');
+    service.closeLiveQueue();
+    expect(service.showLiveQueue()).toBe(false);
+    expect(localStorage.getItem('nuz-player-show-live-queue')).toBe('false');
+  });
+
+  it('should allow removing tracks from queue', () => {
+    const queue = [sampleTrack, sampleTrack2];
+    service.playQueue(queue, 0);
+    expect(service.queue().length).toBe(2);
+
+    service.removeFromQueue(1);
+    expect(service.queue().length).toBe(1);
+    expect(service.queue()[0].id).toBe(sampleTrack.id);
+  });
 });
+

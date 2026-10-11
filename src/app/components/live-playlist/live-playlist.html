@@ -1,0 +1,212 @@
+<div
+  class="flex h-full min-h-0 flex-col text-white backdrop-blur-2xl"
+  [class.bg-black/40]="!embedded()"
+  [class.bg-transparent]="embedded()"
+  [class.border-l]="!embedded()"
+  [class.border-white/10]="!embedded()"
+  style="-webkit-backdrop-filter: blur(28px); backdrop-filter: blur(28px);"
+>
+  <!-- Cabecera estilo YouTube Playlist -->
+  <header
+    class="shrink-0 border-b border-white/10 bg-black/30 backdrop-blur-xl p-4"
+    style="-webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);"
+  >
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-400">
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+          </span>
+          <span>En vivo</span>
+        </div>
+        <h2 class="mt-1 truncate text-base font-black tracking-tight text-white">
+          {{ queueTitle() }}
+        </h2>
+        <p class="mt-0.5 truncate text-xs text-neutral-400">
+          Nuz_Themes &middot;
+          @if (queue().length > 0) {
+            <span class="font-medium text-neutral-300">
+              {{ currentIndex() >= 0 ? currentIndex() + 1 : 1 }} / {{ queue().length }}
+            </span>
+            canciones
+          } @else {
+            <span>0 canciones</span>
+          }
+        </p>
+      </div>
+
+      @if (!embedded()) {
+        <button
+          (click)="audio.closeLiveQueue()"
+          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-white/10 hover:text-white"
+          title="Ocultar lista en vivo"
+          aria-label="Ocultar lista en vivo"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current">
+            <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
+          </svg>
+        </button>
+      }
+    </div>
+
+    <!-- Barra de acciones rápidas de la lista -->
+    <div class="mt-3 flex items-center justify-between border-t border-white/5 pt-2">
+      <div class="flex items-center gap-1">
+        <!-- Botón Aleatorio -->
+        <button
+          (click)="audio.toggleShuffle()"
+          [class.text-white]="audio.shuffle()"
+          [class.bg-white/20]="audio.shuffle()"
+          [class.text-neutral-400]="!audio.shuffle()"
+          class="flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-white/10 hover:text-white"
+          title="Reproducción aleatoria"
+          aria-label="Reproducción aleatoria"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" class="fill-current">
+            <path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" />
+          </svg>
+        </button>
+
+        <!-- Botón Bucle / Repetir -->
+        <button
+          (click)="audio.toggleRepeat()"
+          [class.text-white]="audio.repeat() !== 'off'"
+          [class.bg-white/20]="audio.repeat() !== 'off'"
+          [class.text-neutral-400]="audio.repeat() === 'off'"
+          class="relative flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-white/10 hover:text-white"
+          title="Bucle / Repetir lista"
+          aria-label="Repetir lista"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" class="fill-current">
+            <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+          </svg>
+          @if (audio.repeat() === 'one') {
+            <span class="absolute -right-0.5 top-0.5 text-[8px] font-bold text-white">1</span>
+          }
+        </button>
+      </div>
+
+      @if (queue().length > 0) {
+        <button
+          (click)="onClearQueue()"
+          class="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-neutral-400 transition hover:bg-red-500/10 hover:text-red-300"
+          title="Limpiar lista de reproducción"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" class="fill-current">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5-1-1h-5l-1 1H5v2h14V4z" />
+          </svg>
+          <span>Limpiar</span>
+        </button>
+      }
+    </div>
+  </header>
+
+  <!-- Lista de canciones en vivo -->
+  <div #listContainer class="min-h-0 flex-1 overflow-y-auto p-2 space-y-1 select-none">
+    @if (queue().length > 0) {
+      @for (track of queue(); track track.id + '-' + $index; let i = $index) {
+        <div
+          [attr.data-queue-idx]="i"
+          (click)="onTrackClick(i)"
+          class="group relative flex items-center gap-3 rounded-xl p-2 cursor-pointer transition-all duration-150"
+          [class.bg-white/20]="currentIndex() === i"
+          [class.backdrop-blur-md]="currentIndex() === i"
+          [class.border]="currentIndex() === i"
+          [class.border-white/20]="currentIndex() === i"
+          [class.text-white]="currentIndex() === i"
+          [class.shadow-lg]="currentIndex() === i"
+          [class.shadow-black/40]="currentIndex() === i"
+          [class.hover:bg-white/10]="currentIndex() !== i"
+          [class.text-neutral-300]="currentIndex() !== i"
+        >
+          <!-- Indicador izquierdo: Ecualizador animado / Pausa / Número -->
+          <div class="flex w-6 shrink-0 items-center justify-center text-xs tabular-nums text-neutral-400">
+            @if (currentIndex() === i) {
+              @if (audio.isPlaying()) {
+                <span class="flex items-end justify-center gap-[2px] h-3.5">
+                  <span class="equalizer-bar !bg-white"></span>
+                  <span class="equalizer-bar !bg-white"></span>
+                  <span class="equalizer-bar !bg-white"></span>
+                </span>
+              } @else {
+                <svg width="14" height="14" viewBox="0 0 24 24" class="fill-white">
+                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                </svg>
+              }
+            } @else {
+              <span class="group-hover:hidden">{{ i + 1 }}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" class="hidden fill-white group-hover:inline">
+                <path d="M8 5v14l11-7L8 5z" />
+              </svg>
+            }
+          </div>
+
+          <!-- Carátula pequeña -->
+          <img
+            [src]="track.cover"
+            [alt]="track.title"
+            class="h-10 w-10 shrink-0 rounded-lg object-cover bg-neutral-900 shadow-sm"
+            loading="lazy"
+            decoding="async"
+          />
+
+          <!-- Metadatos de la canción -->
+          <div class="min-w-0 flex-1">
+            <p
+              class="truncate text-xs font-semibold leading-snug"
+              [class.text-white]="currentIndex() === i"
+              [class.font-bold]="currentIndex() === i"
+            >
+              {{ track.title }}
+            </p>
+            <p class="truncate text-[11px] text-neutral-400 leading-none mt-0.5">
+              {{ track.artist }}
+            </p>
+          </div>
+
+          <!-- Duración / Botón de quitar al pasar el cursor -->
+          <div class="shrink-0 flex items-center justify-end">
+            <span class="text-[11px] tabular-nums text-neutral-400 group-hover:hidden">
+              {{ formatTime(durationOf(track)) }}
+            </span>
+            <button
+              (click)="onRemoveTrack(i, $event)"
+              class="hidden group-hover:flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 transition hover:bg-red-500/20 hover:text-red-300"
+              title="Quitar de la lista"
+              aria-label="Quitar de la lista"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" class="fill-current">
+                <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+    } @else {
+      <div class="flex h-full flex-col items-center justify-center p-6 text-center text-neutral-500">
+        <svg width="36" height="36" viewBox="0 0 24 24" class="fill-current text-neutral-600 mb-3">
+          <path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z" />
+        </svg>
+        <p class="text-sm font-semibold text-neutral-300">No hay canciones en la lista</p>
+        <p class="mt-1 text-xs text-neutral-500">Reproduce una playlist para ver la lista en vivo aquí.</p>
+      </div>
+    }
+  </div>
+
+  <!-- Pie de la lista con resumen -->
+  @if (queue().length > 0) {
+    <footer
+      class="shrink-0 border-t border-white/10 bg-black/30 backdrop-blur-xl px-4 py-2.5 text-xs text-neutral-400 flex items-center justify-between"
+      style="-webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);"
+    >
+      <span class="tabular-nums">
+        {{ queue().length }} canciones &middot; {{ formattedTotalDuration() }}
+      </span>
+      <span class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+        Bucle continuo
+      </span>
+    </footer>
+  }
+</div>

@@ -62,7 +62,10 @@ export class PlaylistCard implements OnDestroy {
     } else if (this.isCurrentPlaylist()) {
       this.audio.togglePlay();
     } else {
-      this.audio.playQueue(tracks, 0);
+      this.audio.playQueue(tracks, 0, this.playlist().name);
+      if (this.audio.isBrowser && window.innerWidth >= 768) {
+        this.audio.openLiveQueue();
+      }
     }
   }
 }

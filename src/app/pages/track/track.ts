@@ -29,7 +29,7 @@ export class TrackPage {
     const list = this.tracks();
     if (!current) return;
     const index = list.findIndex((t) => t.id === current.id);
-    this.audio.playQueue(list, index < 0 ? 0 : index);
+    this.audio.playQueue(list, index < 0 ? 0 : index, current.album || 'Canciones');
   }
 
   protected formatTime(seconds: number): string {

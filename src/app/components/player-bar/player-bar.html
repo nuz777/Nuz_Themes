@@ -1,7 +1,8 @@
 <div class="relative">
   <button
     (click)="showPlayerBar.update(v => !v)"
-    class="absolute right-3 -top-6 z-[60] flex h-9 items-center justify-center gap-1 rounded-t-lg border border-b-0 border-neutral-800 bg-neutral-950 text-neutral-300 shadow-lg shadow-black/40 transition hover:bg-neutral-900 hover:text-white px-3"
+    class="absolute right-3 -top-6 z-[60] flex h-9 items-center justify-center gap-1 rounded-t-lg border border-b-0 border-white/10 bg-black/60 text-neutral-300 shadow-lg shadow-black/40 backdrop-blur-xl transition hover:bg-black/80 hover:text-white px-3"
+    style="-webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);"
     [attr.aria-label]="showPlayerBar() ? 'Ocultar reproductor' : 'Mostrar reproductor'"
   >
     <span class="text-[10px] font-semibold uppercase tracking-widest">{{ showPlayerBar() ? 'Ocultar player' : 'Mostrar player' }}</span>
@@ -21,7 +22,10 @@
     [style.max-height]="showPlayerBar() ? '96px' : '0'"
     [class.z-30]="showPlayerBar()"
   >
-    <footer class="relative grid h-[90px] shrink-0 grid-cols-[1fr_auto] items-center gap-3 border-t border-neutral-900 bg-black px-3 md:grid-cols-3 md:gap-4 md:px-4">
+    <footer
+      class="relative grid h-[90px] shrink-0 grid-cols-[1fr_auto] items-center gap-3 border-t border-white/10 bg-black/60 px-3 backdrop-blur-2xl md:grid-cols-3 md:gap-4 md:px-4"
+      style="-webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);"
+    >
   <input
     type="range"
     min="0"
@@ -172,6 +176,25 @@
 
   <div class="hidden items-center justify-end gap-3 md:flex">
     <app-audio-quality-button />
+    <button
+      (click)="audio.toggleLiveQueue()"
+      [class.bg-white/15]="audio.showLiveQueue()"
+      [class.text-white]="audio.showLiveQueue()"
+      [class.text-neutral-400]="!audio.showLiveQueue()"
+      class="flex h-9 items-center gap-1.5 rounded-lg border border-white/10 px-2.5 text-xs font-semibold transition hover:bg-white/15 hover:text-white"
+      title="Lista de reproducción en vivo"
+      aria-label="Lista de reproducción en vivo"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current">
+        <path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z" />
+      </svg>
+      <span class="hidden xl:inline">Lista en vivo</span>
+      @if (audio.queue().length > 0) {
+        <span class="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold text-white tabular-nums">
+          {{ audio.queue().length }}
+        </span>
+      }
+    </button>
     <div class="flex items-center gap-2">
       <svg width="16" height="16" viewBox="0 0 24 24" class="shrink-0 fill-current text-neutral-400">
         <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05a4.5 4.5 0 0 0 2.5-4.02zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z" />

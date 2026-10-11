@@ -187,6 +187,15 @@
       </div>
       <app-now-playing />
     </main>
+
+    @if (audio.showLiveQueue()) {
+      <aside
+        class="hidden md:flex w-80 xl:w-96 shrink-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-neutral-950/40 shadow-2xl shadow-black/80 backdrop-blur-2xl transition-all duration-300"
+        style="-webkit-backdrop-filter: blur(28px); backdrop-filter: blur(28px);"
+      >
+        <app-live-playlist />
+      </aside>
+    }
   </div>
   <app-player-bar />
   <app-toast />
