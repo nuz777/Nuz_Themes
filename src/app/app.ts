@@ -6,17 +6,18 @@ import { NowPlaying } from './components/now-playing/now-playing';
 import { Toast } from './components/toast/toast';
 import { FavoritesFAB } from './components/favorites-fab/favorites-fab';
 import { AudioQualityModal } from './components/audio-quality/audio-quality-modal';
+import { LivePlaylist } from './components/live-playlist/live-playlist';
 import { TracksService } from './services/tracks.service';
 import { AudioService } from './services/audio.service';
 import { MediaSessionService } from './services/media-session.service';
 import type { Track } from './models/track';
 
 const BOOT_LOADER_ID = 'boot-loader';
-const MIN_VISIBLE_MS = 450;
+const MIN_VISIBLE_MS = 120;
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, Sidebar, PlayerBar, NowPlaying, Toast, FavoritesFAB, AudioQualityModal],
+  imports: [RouterOutlet, RouterLink, Sidebar, PlayerBar, NowPlaying, Toast, FavoritesFAB, AudioQualityModal, LivePlaylist],
   templateUrl: './app.html',
 })
 export class App implements OnInit, OnDestroy {

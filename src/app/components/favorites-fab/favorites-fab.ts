@@ -114,7 +114,7 @@ export class FavoritesFAB {
   }
 
   protected playTrack(track: Track): void {
-    this.audio.playTrack(track, this.tracks());
+    this.audio.playTrack(track, this.tracks(), 'Mis Favoritos');
     this.audio.openNowPlaying();
     this.close();
   }

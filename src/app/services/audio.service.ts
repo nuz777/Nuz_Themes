@@ -5,13 +5,28 @@ import { EqualizerService } from './equalizer.service';
 import { AudioQualityService, type AudioQuality } from './audio-quality.service';
 import { CoverCacheService } from './cover-cache.service';
 import { DurationService } from './duration.service';
+import { TracksService } from './tracks.service';
 
 type RepeatMode = 'off' | 'all' | 'one';
+
+const STORAGE_PREFIX = 'nuz-player-';
+const KEY_TRACK_ID = `${STORAGE_PREFIX}track-id`;
+const KEY_QUEUE = `${STORAGE_PREFIX}queue`;
+const KEY_QUEUE_INDEX = `${STORAGE_PREFIX}queue-index`;
+const KEY_QUEUE_TITLE = `${STORAGE_PREFIX}queue-title`;
+const KEY_SHOW_LIVE_QUEUE = `${STORAGE_PREFIX}show-live-queue`;
+const KEY_TIME = `${STORAGE_PREFIX}current-time`;
+const KEY_VOLUME = `${STORAGE_PREFIX}volume`;
+const KEY_SHUFFLE = `${STORAGE_PREFIX}shuffle`;
+const KEY_REPEAT = `${STORAGE_PREFIX}repeat`;
 
 @Injectable({ providedIn: 'root' })
 export class AudioService {
   readonly currentTrack = signal<Track | null>(null);
   readonly queue = signal<Track[]>([]);
+  readonly queueIndex = signal<number>(-1);
+  readonly queueTitle = signal<string>('Cola de reproducción');
+  readonly showLiveQueue = signal<boolean>(false);
   readonly isPlaying = signal(false);
   readonly currentTime = signal(0);
   readonly duration = signal(0);
@@ -27,11 +42,22 @@ export class AudioService {
   private readonly equalizer = inject(EqualizerService);
   private readonly coverCache = inject(CoverCacheService);
   private readonly durationService = inject(DurationService);
+  private readonly tracksService = inject(TracksService);
 
   private audio: HTMLAudioElement | null = null;
-  private queueIndex = -1;
-  private warmers = new Map<string, HTMLAudioElement>();
+  private lastTimeSave = 0;
 
+  constructor() {
+    this.restoreSavedSettings();
+    if (this.isBrowser) {
+      window.addEventListener('beforeunload', () => {
+        this.persistCurrentPlaybackTime();
+      });
+      queueMicrotask(() => {
+        void this.restorePlayerState();
+      });
+    }
+  }
 
   get isBrowser(): boolean {
     return typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -50,99 +76,100 @@ export class AudioService {
   }
 
   /**
-   * Empieza a descargar el audio de una canción antes de que la reproduzcas
-   * (al pasar el mouse o el foco por encima). En redes lentas esto hace que
-   * el clic suene casi al instante porque la descarga ya viene en camino.
+   * Precarga de manera silenciosa una canción en el almacenamiento local
+   * para que al hacer clic se reproduzca de forma instantánea.
    */
   warm(track: Track): void {
     if (!this.isBrowser) return;
-    if (!track.audioUrl || this.warmers.has(track.id)) return;
+    if (!track.audioUrl) return;
     if (this.currentTrack()?.id === track.id) return;
-    if (this.offline.isDownloaded(track.id) || this.offline.isDeviceDownloaded(track.id)) return;
+    if (this.offline.isCached(track.id)) return;
 
-    const el = new Audio();
-    // 'metadata' evita descargar archivos masivos enteros al solo posar el puntero
-    el.preload = 'metadata';
-    el.src = this.qualityService.resolveTrackUrl(track, this.qualityService.quality());
-    el.load();
-    this.warmers.set(track.id, el);
-    this.trimWarmers(track.id);
+    void this.offline.autoCache(track);
   }
 
-  private trimWarmers(keepId: string): void {
-    while (this.warmers.size > 3) {
-      const oldest = this.warmers.keys().next().value;
-      if (oldest === undefined || oldest === keepId) break;
-      const el = this.warmers.get(oldest);
-      if (el) {
-        el.removeAttribute('src');
-        el.load();
-      }
-      this.warmers.delete(oldest);
-    }
-  }
-
-  playTrack(track: Track, queue?: Track[]): void {
+  playTrack(track: Track, queue?: Track[], title?: string): void {
     if (!this.isBrowser) return;
 
     this.ensureAudio();
 
     if (queue && queue.length) {
       this.queue.set(queue);
-      this.queueIndex = queue.findIndex((t) => t.id === track.id);
+      const foundIdx = queue.findIndex((t) => t.id === track.id);
+      this.queueIndex.set(foundIdx >= 0 ? foundIdx : 0);
+    }
+    if (title) {
+      this.queueTitle.set(title);
     }
 
     if (this.currentTrack()?.id === track.id) {
-      if (!this.isPlaying()) void this.audio!.play();
+      if (this.audio) {
+        if (this.audio.ended || Math.abs(this.audio.currentTime - (this.duration() || 0)) < 0.5) {
+          this.audio.currentTime = 0;
+          this.currentTime.set(0);
+        }
+        if (!this.isPlaying()) void this.audio.play();
+      }
       return;
     }
 
     this.currentTrack.set(track);
-    const url = this.warmers.get(track.id);
-    this.warmers.delete(track.id);
-    if (url) {
-      url.removeAttribute('src');
-      url.load();
-    }
+    this.currentTime.set(0);
+
+    this.persistTrackAndQueue(track);
 
     void this.loadAndPlay(track);
     this.warmNext();
   }
 
-  /** Precarga la siguiente canción de la cola y sus carátulas para que el cambio sea instantáneo. */
+  /** Precarga la siguiente canción de la cola en IndexedDB para transición instantánea sin buffer. */
   private warmNext(): void {
     this.coverCache.preloadQueue(this.currentTrack(), this.queue());
     const q = this.queue();
-    if (!q.length || this.queueIndex < 0) return;
-    const nextIndex = this.queueIndex + 1;
-    if (nextIndex >= q.length) return;
+    const curIdx = this.queueIndex();
+    if (!q.length || curIdx < 0) return;
+    let nextIndex = curIdx + 1;
+    if (nextIndex >= q.length) nextIndex = 0;
     const next = q[nextIndex];
     if (next) this.warm(next);
   }
 
   private async loadAndPlay(track: Track): Promise<void> {
-    // Se pide la fuente sin esperar a IndexedDB: el audio online es el caso común.
     let src: string;
+    let isFromCache = false;
+
     if (track.id.startsWith('user-')) {
       src = await this.offline.resolveSourceUrl(track);
       if (!src) {
         src = track.audioUrl;
       }
     } else {
-      src = this.offline.isDownloaded(track.id)
-        ? await this.offline.resolveSourceUrl(track)
-        : this.qualityService.resolveTrackUrl(track, this.qualityService.quality());
+      const cached = await this.offline.resolveSourceUrl(track);
+      if (cached && cached.startsWith('blob:')) {
+        src = cached;
+        isFromCache = true;
+      } else {
+        src = this.qualityService.resolveTrackUrl(track, this.qualityService.quality());
+      }
     }
+
     if (this.currentTrack()?.id !== track.id) return;
 
     this.audio!.preload = 'auto';
     this.audio!.src = src;
     this.audio!.load();
     this.equalizer.resume();
+
     try {
       await this.audio!.play();
     } catch {
       this.playbackError.set(true);
+    }
+
+    // Si la pista se transmitió desde la red, guardarla silenciosamente en IndexedDB
+    // para que jamás vuelva a cargarse por red.
+    if (!isFromCache && !track.id.startsWith('user-')) {
+      void this.offline.autoCache(track);
     }
   }
 
@@ -180,11 +207,136 @@ export class AudioService {
     }
   }
 
-  playQueue(queue: Track[], startIndex = 0): void {
+  playQueue(queue: Track[], startIndex = 0, title?: string): void {
     if (!queue.length) return;
     this.queue.set(queue);
-    this.queueIndex = startIndex;
+    this.queueIndex.set(startIndex);
+    if (title) {
+      this.queueTitle.set(title);
+    }
     this.playTrack(queue[startIndex]);
+  }
+
+  playQueueIndex(index: number): void {
+    const q = this.queue();
+    if (index < 0 || index >= q.length) return;
+    this.queueIndex.set(index);
+    const track = q[index];
+    if (this.currentTrack()?.id === track.id) {
+      if (this.audio) {
+        if (this.audio.ended || Math.abs(this.audio.currentTime - (this.duration() || 0)) < 0.5) {
+          this.audio.currentTime = 0;
+          this.currentTime.set(0);
+        }
+        if (!this.isPlaying()) {
+          void this.audio.play();
+        } else {
+          this.audio.pause();
+        }
+      }
+      return;
+    }
+    this.ensureAudio();
+    this.currentTrack.set(track);
+    this.currentTime.set(0);
+    this.persistTrackAndQueue(track);
+    void this.loadAndPlay(track);
+    this.warmNext();
+  }
+
+  removeFromQueue(index: number): void {
+    const q = [...this.queue()];
+    if (index < 0 || index >= q.length) return;
+
+    const curIdx = this.queueIndex();
+    q.splice(index, 1);
+    this.queue.set(q);
+
+    if (q.length === 0) {
+      this.stop();
+      this.queueIndex.set(-1);
+      return;
+    }
+
+    if (index < curIdx) {
+      this.queueIndex.set(curIdx - 1);
+      if (this.currentTrack()) {
+        this.persistTrackAndQueue(this.currentTrack()!);
+      }
+    } else if (index === curIdx) {
+      const nextIdx = index >= q.length ? 0 : index;
+      this.playQueueIndex(nextIdx);
+    } else {
+      if (this.currentTrack()) {
+        this.persistTrackAndQueue(this.currentTrack()!);
+      }
+    }
+  }
+
+  clearQueue(): void {
+    const cur = this.currentTrack();
+    if (cur) {
+      this.queue.set([cur]);
+      this.queueIndex.set(0);
+      this.persistTrackAndQueue(cur);
+    } else {
+      this.stop();
+      this.queue.set([]);
+      this.queueIndex.set(-1);
+    }
+  }
+
+  addToQueue(track: Track): void {
+    const q = this.queue();
+    if (!q.length) {
+      this.playTrack(track, [track]);
+      return;
+    }
+    this.queue.update((prev) => [...prev, track]);
+    if (this.currentTrack()) {
+      this.persistTrackAndQueue(this.currentTrack()!);
+    }
+  }
+
+  playNextInQueue(track: Track): void {
+    const q = [...this.queue()];
+    if (!q.length) {
+      this.playTrack(track, [track]);
+      return;
+    }
+    const insertIdx = Math.max(0, this.queueIndex() + 1);
+    q.splice(insertIdx, 0, track);
+    this.queue.set(q);
+    if (this.currentTrack()) {
+      this.persistTrackAndQueue(this.currentTrack()!);
+    }
+  }
+
+  toggleLiveQueue(): void {
+    this.showLiveQueue.update((v) => !v);
+    if (this.isBrowser) {
+      try {
+        localStorage.setItem(KEY_SHOW_LIVE_QUEUE, this.showLiveQueue().toString());
+      } catch {}
+    }
+  }
+
+  openLiveQueue(): void {
+    this.showLiveQueue.set(true);
+    if (this.isBrowser) {
+      try {
+        localStorage.setItem(KEY_SHOW_LIVE_QUEUE, 'true');
+      } catch {}
+    }
+  }
+
+  closeLiveQueue(): void {
+    this.showLiveQueue.set(false);
+    if (this.isBrowser) {
+      try {
+        localStorage.setItem(KEY_SHOW_LIVE_QUEUE, 'false');
+      } catch {}
+    }
   }
 
   togglePlay(): void {
@@ -206,50 +358,50 @@ export class AudioService {
     this.audio.pause();
     this.audio.currentTime = 0;
     this.currentTrack.set(null);
+    if (this.isBrowser) {
+      try {
+        localStorage.removeItem(KEY_TRACK_ID);
+        localStorage.removeItem(KEY_TIME);
+      } catch {}
+    }
   }
 
   next(): void {
     const q = this.queue();
-    if (!q.length || this.queueIndex < 0) return;
+    const curIdx = this.queueIndex();
+    if (!q.length || curIdx < 0) return;
 
-    const mode = this.repeat();
-    let nextIndex = this.queueIndex + 1;
+    let nextIndex = curIdx + 1;
 
     if (nextIndex >= q.length) {
-      if (mode === 'all') {
-        nextIndex = 0;
-      } else {
-        this.audio?.pause();
-        this.isPlaying.set(false);
-        this.currentTime.set(0);
-        return;
-      }
+      // Al terminar la lista de reproducción, vuelve automáticamente al principio
+      nextIndex = 0;
     }
 
-    this.queueIndex = nextIndex;
-    this.playTrack(q[nextIndex]);
+    this.playQueueIndex(nextIndex);
   }
 
   prev(): void {
     const q = this.queue();
-    if (!q.length || this.queueIndex < 0) return;
+    const curIdx = this.queueIndex();
+    if (!q.length || curIdx < 0) return;
 
     if (this.currentTime() > 3) {
       this.seek(0);
       return;
     }
 
-    let prevIndex = this.queueIndex - 1;
+    let prevIndex = curIdx - 1;
     if (prevIndex < 0) prevIndex = q.length - 1;
 
-    this.queueIndex = prevIndex;
-    this.playTrack(q[prevIndex]);
+    this.playQueueIndex(prevIndex);
   }
 
   seek(time: number): void {
     if (!this.audio) return;
     this.audio.currentTime = time;
     this.currentTime.set(time);
+    this.persistCurrentPlaybackTime();
   }
 
   seekBy(seconds: number): void {
@@ -261,17 +413,33 @@ export class AudioService {
   setVolume(value: number): void {
     this.volume.set(value);
     if (this.audio) this.audio.volume = value;
+    if (this.isBrowser) {
+      try {
+        localStorage.setItem(KEY_VOLUME, value.toString());
+      } catch {}
+    }
   }
 
   toggleShuffle(): void {
     this.shuffle.update((v) => !v);
     if (this.shuffle()) this.shuffleQueue();
+    if (this.isBrowser) {
+      try {
+        localStorage.setItem(KEY_SHUFFLE, this.shuffle().toString());
+      } catch {}
+    }
   }
 
   toggleRepeat(): void {
     const modes: RepeatMode[] = ['off', 'all', 'one'];
     const current = modes.indexOf(this.repeat());
-    this.repeat.set(modes[(current + 1) % modes.length]);
+    const next = modes[(current + 1) % modes.length];
+    this.repeat.set(next);
+    if (this.isBrowser) {
+      try {
+        localStorage.setItem(KEY_REPEAT, next);
+      } catch {}
+    }
   }
 
   private ensureAudio(): void {
@@ -283,8 +451,17 @@ export class AudioService {
     this.equalizer.attach(this.audio);
 
     this.audio.addEventListener('timeupdate', () => {
-      this.currentTime.set(this.audio!.currentTime);
+      if (!this.audio) return;
+      const cur = this.audio.currentTime;
+      this.currentTime.set(cur);
+
+      const now = Date.now();
+      if (now - this.lastTimeSave > 1200) {
+        this.lastTimeSave = now;
+        this.persistCurrentPlaybackTime();
+      }
     });
+
     this.audio.addEventListener('loadedmetadata', () => {
       this.duration.set(this.audio!.duration || 0);
     });
@@ -292,7 +469,10 @@ export class AudioService {
       this.duration.set(this.audio!.duration || 0);
     });
     this.audio.addEventListener('play', () => this.isPlaying.set(true));
-    this.audio.addEventListener('pause', () => this.isPlaying.set(false));
+    this.audio.addEventListener('pause', () => {
+      this.isPlaying.set(false);
+      this.persistCurrentPlaybackTime();
+    });
     this.audio.addEventListener('playing', () => this.playbackError.set(false));
     this.audio.addEventListener('error', () => this.playbackError.set(true));
     this.audio.addEventListener('loadstart', () => this.loading.set(true));
@@ -322,5 +502,112 @@ export class AudioService {
       [q[i], q[j]] = [q[j], q[i]];
     }
     this.queue.set(q);
+  }
+
+  private persistCurrentPlaybackTime(): void {
+    if (!this.isBrowser || !this.audio) return;
+    try {
+      const t = this.audio.currentTime;
+      if (Number.isFinite(t) && t >= 0) {
+        localStorage.setItem(KEY_TIME, t.toFixed(1));
+      }
+    } catch {}
+  }
+
+  private persistTrackAndQueue(track: Track): void {
+    if (!this.isBrowser) return;
+    try {
+      localStorage.setItem(KEY_TRACK_ID, track.id);
+      localStorage.setItem(KEY_QUEUE, JSON.stringify(this.queue().map((t) => t.id)));
+      localStorage.setItem(KEY_QUEUE_INDEX, this.queueIndex().toString());
+      localStorage.setItem(KEY_QUEUE_TITLE, this.queueTitle());
+      localStorage.setItem(KEY_TIME, '0');
+    } catch {}
+  }
+
+  private restoreSavedSettings(): void {
+    if (!this.isBrowser) return;
+    try {
+      const savedVolume = localStorage.getItem(KEY_VOLUME);
+      if (savedVolume !== null) {
+        const v = parseFloat(savedVolume);
+        if (!isNaN(v) && v >= 0 && v <= 1) {
+          this.volume.set(v);
+        }
+      }
+
+      const savedShuffle = localStorage.getItem(KEY_SHUFFLE);
+      if (savedShuffle !== null) {
+        this.shuffle.set(savedShuffle === 'true');
+      }
+
+      const savedRepeat = localStorage.getItem(KEY_REPEAT) as RepeatMode | null;
+      if (savedRepeat && ['off', 'all', 'one'].includes(savedRepeat)) {
+        this.repeat.set(savedRepeat);
+      }
+
+      const savedTitle = localStorage.getItem(KEY_QUEUE_TITLE);
+      if (savedTitle) {
+        this.queueTitle.set(savedTitle);
+      }
+
+      const savedLiveQueue = localStorage.getItem(KEY_SHOW_LIVE_QUEUE);
+      if (savedLiveQueue !== null) {
+        this.showLiveQueue.set(savedLiveQueue === 'true');
+      }
+    } catch {}
+  }
+
+  private async restorePlayerState(): Promise<void> {
+    if (!this.isBrowser) return;
+    try {
+      const trackId = localStorage.getItem(KEY_TRACK_ID);
+      if (!trackId) return;
+
+      const track = this.tracksService.getTrack(trackId);
+      if (!track) return;
+
+      const savedQueueRaw = localStorage.getItem(KEY_QUEUE);
+      let restoredQueue: Track[] = [];
+      if (savedQueueRaw) {
+        try {
+          const ids: string[] = JSON.parse(savedQueueRaw);
+          restoredQueue = ids.map((id) => this.tracksService.getTrack(id)).filter((t): t is Track => !!t);
+        } catch {}
+      }
+      if (!restoredQueue.length) {
+        restoredQueue = [track];
+      }
+
+      const indexRaw = localStorage.getItem(KEY_QUEUE_INDEX);
+      const index = indexRaw !== null ? parseInt(indexRaw, 10) : restoredQueue.findIndex((t) => t.id === track.id);
+
+      const timeRaw = localStorage.getItem(KEY_TIME);
+      const savedTime = timeRaw !== null ? parseFloat(timeRaw) : 0;
+
+      this.currentTrack.set(track);
+      this.queue.set(restoredQueue);
+      this.queueIndex.set(index >= 0 ? index : 0);
+      this.currentTime.set(savedTime);
+      this.duration.set(track.duration || 0);
+
+      this.ensureAudio();
+      const src = await this.offline.resolveSourceUrl(track);
+      if (this.currentTrack()?.id !== track.id) return;
+
+      this.audio!.preload = 'metadata';
+      this.audio!.src = src || this.qualityService.resolveTrackUrl(track, this.qualityService.quality());
+
+      if (savedTime > 0) {
+        const onLoaded = () => {
+          if (this.audio && Math.abs(this.audio.currentTime - savedTime) > 0.5) {
+            this.audio.currentTime = savedTime;
+          }
+        };
+        this.audio!.addEventListener('loadedmetadata', onLoaded, { once: true });
+      }
+    } catch (e) {
+      console.warn('Failed to restore player state', e);
+    }
   }
 }

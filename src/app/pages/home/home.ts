@@ -39,7 +39,7 @@ export class Home {
   });
 
   protected playTrack(track: Track): void {
-    this.audio.playTrack(track, this.tracksService.tracks());
+    this.audio.playTrack(track, this.tracksService.tracks(), 'Música destacada');
     this.audio.openNowPlaying();
   }
 }

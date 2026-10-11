@@ -42,8 +42,16 @@ export class TrackList {
   }
 
   protected playTrack(track: Track, index: number): void {
-    this.audio.playTrack(track, this.tracks());
+    const playlistId = this.playlistId();
+    const playlistName = playlistId ? this.tracksService.getPlaylist(playlistId)?.name : undefined;
+    this.audio.playTrack(track, this.tracks(), playlistName);
     this.audio.openNowPlaying();
+  }
+
+  protected addToLiveQueue(track: Track, event: Event): void {
+    event.stopPropagation();
+    this.audio.addToQueue(track);
+    this.toast.show(`Añadida a la lista: ${track.title}`, 'info', track.cover);
   }
 
   protected requestRemoveFromPlaylist(track: Track, event: Event): void {
