@@ -65,7 +65,7 @@ export class PlaylistsPage {
     this.coverFileInput?.nativeElement.click();
   }
 
-  protected onAudioSelected(event: Event): void {
+  protected async onAudioSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
@@ -77,6 +77,23 @@ export class PlaylistsPage {
     if (!this.trackTitle().trim()) {
       const baseName = file.name.replace(/\.[^/.]+$/, '').trim();
       this.trackTitle.set(baseName || file.name);
+    }
+
+    // Si el usuario no ha subido una carátula propia, intentar extraer la que viene incrustada en la canción
+    if (!this.selectedCoverFile()) {
+      try {
+        const embeddedBlob = await this.tracksService.extractEmbeddedCover(file);
+        if (embeddedBlob && !this.selectedCoverFile()) {
+          const coverFile = new File([embeddedBlob], 'cover.jpg', { type: embeddedBlob.type || 'image/jpeg' });
+          this.selectedCoverFile.set(coverFile);
+          if (this.coverPreview()?.startsWith('blob:')) {
+            try { URL.revokeObjectURL(this.coverPreview()!); } catch {}
+          }
+          this.coverPreview.set(URL.createObjectURL(embeddedBlob));
+        }
+      } catch {
+        // Continuar con carátula predeterminada si no tiene carátula incrustada
+      }
     }
   }
 

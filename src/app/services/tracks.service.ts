@@ -135,23 +135,27 @@ export class TracksService {
     if (typeof window === 'undefined') return null;
 
     const file = params.file;
-    // Usar directamente el File como Blob sin duplicar la memoria RAM con arrayBuffer
     const audioBlob: Blob = file;
-
     const id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    const [coverDataUrl, duration] = await Promise.all([
-      this.processCoverImage(params.cover || null),
+
+    const [coverResult, duration] = await Promise.all([
+      this.processCoverImage(params.cover || null, audioBlob),
       this.extractAudioDuration(audioBlob),
     ]);
 
-    if (params.cover) {
+    // Registrar URL de carátula en memoria de inmediato para que se vea sin recargar
+    if (coverResult.objectUrl && coverResult.objectUrl !== '/caratulas/image.webp') {
+      this.offline.registerObjectUrl(`cover-${id}`, coverResult.objectUrl);
+    }
+
+    if (coverResult.blob) {
       try {
         await Promise.race([
-          this.offline.storeUserCover(id, params.cover),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('storeUserCover timeout')), 1500)),
+          this.offline.storeUserCover(id, coverResult.blob),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('storeUserCover timeout')), 4000)),
         ]);
       } catch {
-        // Fallback a data URL en caso de fallo o timeout de IndexedDB
+        // Fallback: el cover continúa visible desde la URL de memoria
       }
     }
 
@@ -162,7 +166,7 @@ export class TracksService {
       title: safeTitle,
       artist: params.artist?.trim() || 'Artista desconocido',
       album: params.album?.trim() || 'Música local',
-      cover: coverDataUrl,
+      cover: coverResult.thumbnail,
       duration,
       createdAt: Date.now(),
     };
@@ -173,7 +177,7 @@ export class TracksService {
     try {
       await Promise.race([
         this.offline.storeUserTrack(id, audioBlob),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('storeUserTrack timeout')), 2500)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('storeUserTrack timeout')), 3000)),
       ]);
     } catch {
       // Si IndexedDB demora o tiene cupo lleno, el audio se reproduce desde memoria de forma inmediata
@@ -187,7 +191,7 @@ export class TracksService {
       title: metadata.title,
       artist: metadata.artist,
       album: metadata.album,
-      cover: metadata.cover,
+      cover: coverResult.objectUrl,
       audioUrl,
       duration: metadata.duration,
     };
@@ -291,118 +295,211 @@ export class TracksService {
     }
   }
 
-  private async processCoverImage(file: File | null): Promise<string> {
-    if (!file) return '/caratulas/image.webp';
+  async processCoverImage(
+    coverSource: Blob | File | null,
+    audioBlob?: Blob,
+  ): Promise<{ blob: Blob | null; thumbnail: string; objectUrl: string }> {
+    if (typeof window === 'undefined') {
+      return { blob: null, thumbnail: '/caratulas/image.webp', objectUrl: '/caratulas/image.webp' };
+    }
 
-    return new Promise<string>((resolve) => {
-      const timeout = setTimeout(() => resolve('/caratulas/image.webp'), 1800);
+    let source: Blob | File | null = coverSource;
+    if (!source && audioBlob) {
+      source = await this.extractEmbeddedCover(audioBlob);
+    }
 
-      const run = async () => {
-        try {
-          const canvasResult = await this.resizeImageToDataUrl(file, 320, 0.78);
-          if (canvasResult && canvasResult.startsWith('data:image/')) {
-            clearTimeout(timeout);
-            return resolve(canvasResult);
-          }
-        } catch {}
+    if (!source) {
+      return { blob: null, thumbnail: '/caratulas/image.webp', objectUrl: '/caratulas/image.webp' };
+    }
 
-        try {
-          const fileReaderResult = await this.fileToDataUrl(file);
-          if (fileReaderResult && fileReaderResult.startsWith('data:image/')) {
-            clearTimeout(timeout);
-            return resolve(fileReaderResult);
-          }
-        } catch {}
-
-        clearTimeout(timeout);
-        resolve('/caratulas/image.webp');
-      };
-
-      void run();
-    });
+    try {
+      const processed = await this.optimizeCoverImage(source, 512, 128);
+      return processed;
+    } catch (err) {
+      console.warn('Fallback al usar carátula original directa:', err);
+      try {
+        const objectUrl = URL.createObjectURL(source);
+        return {
+          blob: source,
+          thumbnail: '/caratulas/image.webp',
+          objectUrl,
+        };
+      } catch {
+        return { blob: null, thumbnail: '/caratulas/image.webp', objectUrl: '/caratulas/image.webp' };
+      }
+    }
   }
 
-  private resizeImageToDataUrl(file: File, maxDim = 320, quality = 0.78): Promise<string> {
-    return new Promise((resolve, reject) => {
-      if (typeof window === 'undefined' || typeof document === 'undefined') {
-        return resolve('/caratulas/image.webp');
-      }
+  private async optimizeCoverImage(
+    source: Blob,
+    maxDim = 512,
+    thumbDim = 128,
+  ): Promise<{ blob: Blob; thumbnail: string; objectUrl: string }> {
+    const imgData = await this.decodeImageSource(source);
+    const w = imgData.width;
+    const h = imgData.height;
+    if (!w || !h) throw new Error('Dimensiones inválidas');
 
+    // Recorte cuadrado 1:1 centrado profesional
+    const size = Math.min(w, h);
+    const sx = Math.max(0, Math.round((w - size) / 2));
+    const sy = Math.max(0, Math.round((h - size) / 2));
+    const targetSize = Math.min(size, maxDim);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetSize;
+    canvas.height = targetSize;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Contexto canvas 2d no disponible');
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    if (imgData.bitmap) {
+      ctx.drawImage(imgData.bitmap, sx, sy, size, size, 0, 0, targetSize, targetSize);
+      imgData.bitmap.close?.();
+    } else if (imgData.img) {
+      ctx.drawImage(imgData.img, sx, sy, size, size, 0, 0, targetSize, targetSize);
+    }
+
+    // Blob de alta resolución (WebP 0.88 con fallback a JPEG)
+    const highResBlob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob(
+        (b) => {
+          if (b) return resolve(b);
+          canvas.toBlob((b2) => resolve(b2 || source), 'image/jpeg', 0.90);
+        },
+        'image/webp',
+        0.88,
+      );
+    });
+
+    // Miniatura liviana (~2KB) para localStorage
+    const thumbCanvas = document.createElement('canvas');
+    thumbCanvas.width = thumbDim;
+    thumbCanvas.height = thumbDim;
+    const thumbCtx = thumbCanvas.getContext('2d');
+    let thumbnail = '/caratulas/image.webp';
+    if (thumbCtx) {
+      thumbCtx.imageSmoothingEnabled = true;
+      thumbCtx.imageSmoothingQuality = 'medium';
+      thumbCtx.drawImage(canvas, 0, 0, thumbDim, thumbDim);
+      try {
+        thumbnail = thumbCanvas.toDataURL('image/webp', 0.65);
+        if (!thumbnail.startsWith('data:image/')) {
+          thumbnail = thumbCanvas.toDataURL('image/jpeg', 0.65);
+        }
+      } catch {
+        thumbnail = '/caratulas/image.webp';
+      }
+    }
+
+    const objectUrl = URL.createObjectURL(highResBlob);
+    return {
+      blob: highResBlob,
+      thumbnail,
+      objectUrl,
+    };
+  }
+
+  private async decodeImageSource(
+    source: Blob,
+  ): Promise<{ width: number; height: number; bitmap?: ImageBitmap; img?: HTMLImageElement }> {
+    if (typeof createImageBitmap !== 'undefined') {
+      try {
+        const bitmap = await createImageBitmap(source);
+        return { width: bitmap.width, height: bitmap.height, bitmap };
+      } catch {
+        // Fallback a HTMLImageElement
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(source);
+      const img = new Image();
       const timer = setTimeout(() => {
         cleanup();
-        reject(new Error('Image resize timeout'));
-      }, 1500);
+        reject(new Error('Timeout decodificando imagen'));
+      }, 5000);
 
-      const objectUrl = URL.createObjectURL(file);
-      const img = new Image();
-      let cleaned = false;
       const cleanup = () => {
-        if (cleaned) return;
-        cleaned = true;
         clearTimeout(timer);
         try { URL.revokeObjectURL(objectUrl); } catch {}
       };
 
       img.onload = () => {
-        try {
-          let w = img.naturalWidth || img.width;
-          let h = img.naturalHeight || img.height;
-          if (!w || !h) {
-            cleanup();
-            return reject(new Error('Invalid dimensions'));
-          }
-
-          if (w > maxDim || h > maxDim) {
-            if (w > h) {
-              h = Math.round((h * maxDim) / w);
-              w = maxDim;
-            } else {
-              w = Math.round((w * maxDim) / h);
-              h = maxDim;
-            }
-          }
-
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            cleanup();
-            return reject(new Error('Canvas context unavailable'));
-          }
-
-          ctx.drawImage(img, 0, 0, w, h);
-          cleanup();
-          const dataUrl = canvas.toDataURL('image/jpeg', quality);
-          resolve(dataUrl);
-        } catch (e) {
-          cleanup();
-          reject(e);
-        }
+        const w = img.naturalWidth || img.width;
+        const h = img.naturalHeight || img.height;
+        cleanup();
+        resolve({ width: w, height: h, img });
       };
 
       img.onerror = () => {
         cleanup();
-        reject(new Error('Image failed to load'));
+        reject(new Error('Error cargando imagen'));
       };
 
       img.src = objectUrl;
     });
   }
 
-  private fileToDataUrl(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          resolve(reader.result);
-        } else {
-          reject(new Error('FileReader returned non-string result'));
+  async extractEmbeddedCover(blob: Blob): Promise<Blob | null> {
+    if (typeof window === 'undefined') return null;
+    try {
+      const sliceSize = Math.min(blob.size, 3 * 1024 * 1024);
+      const head = await blob.slice(0, sliceSize).arrayBuffer();
+      const u8 = new Uint8Array(head);
+      if (u8.length < 10) return null;
+
+      if (u8[0] === 0x49 && u8[1] === 0x44 && u8[2] === 0x33) {
+        const v = u8[3];
+        const tagSize = ((u8[6] & 0x7f) << 21) | ((u8[7] & 0x7f) << 14) | ((u8[8] & 0x7f) << 7) | (u8[9] & 0x7f);
+        let pos = 10;
+        const max = Math.min(tagSize + 10, u8.length);
+
+        while (pos < max - 10) {
+          const frameId = String.fromCharCode(u8[pos], u8[pos + 1], u8[pos + 2], u8[pos + 3]);
+          if (!/^[A-Z0-9]{4}$/.test(frameId)) break;
+
+          let frameSize: number;
+          if (v === 4) {
+            frameSize = ((u8[pos + 4] & 0x7f) << 21) | ((u8[pos + 5] & 0x7f) << 14) | ((u8[pos + 6] & 0x7f) << 7) | (u8[pos + 7] & 0x7f);
+          } else {
+            frameSize = (u8[pos + 4] << 24) | (u8[pos + 5] << 16) | (u8[pos + 6] << 8) | u8[pos + 7];
+          }
+
+          if (frameSize <= 0 || pos + 10 + frameSize > u8.length) break;
+
+          if (frameId === 'APIC') {
+            const frame = u8.subarray(pos + 10, pos + 10 + frameSize);
+            const enc = frame[0];
+            let mimeEnd = 1;
+            while (mimeEnd < frame.length && frame[mimeEnd] !== 0) mimeEnd++;
+            let mime = '';
+            for (let i = 1; i < mimeEnd; i++) mime += String.fromCharCode(frame[i]);
+            if (!mime || mime === 'image/') mime = 'image/jpeg';
+
+            let offset = mimeEnd + 2;
+            if (enc === 0 || enc === 3) {
+              while (offset < frame.length && frame[offset] !== 0) offset++;
+              offset++;
+            } else {
+              while (offset < frame.length - 1 && !(frame[offset] === 0 && frame[offset + 1] === 0)) offset += 2;
+              offset += 2;
+            }
+
+            if (offset < frame.length) {
+              const imgBytes = frame.subarray(offset);
+              return new Blob([imgBytes], { type: mime });
+            }
+          }
+          pos += 10 + frameSize;
         }
-      };
-      reader.onerror = () => reject(reader.error || new Error('FileReader error'));
-      reader.readAsDataURL(file);
-    });
+      }
+    } catch {
+      // Ignorar fallos de extracción
+    }
+    return null;
   }
 
   private async extractAudioDuration(blob: Blob): Promise<number> {
