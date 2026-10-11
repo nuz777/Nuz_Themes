@@ -1,0 +1,12 @@
+{
+  "title": "three",
+  "authors": ["Cult Member"],
+  "albums": ["2017 Archives"],
+  "date": "29-07-2017",
+  "presentation": {
+    "cover": "/caratulas/cult.webp"
+  },
+  "source": {
+    "low": "/music/CultMember.mp3"
+  }
+}

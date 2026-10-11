@@ -1,0 +1,15 @@
+{
+  "title": "MONTAGEM DIMENSION",
+  "authors": ["Nuz"],
+  "albums": ["Phonk"],
+  "date": "01-01-2000",
+  "presentation": {
+    "cover": "/caratulas/montagemdimesion.webp"
+  },
+  "source": {
+    "low": "/music/MONTAGEM DIMENSION.mp3",
+    "video": {
+      "source": "/video/MONTAGEM%20DIMENSION.mp4"
+    }
+  }
+}

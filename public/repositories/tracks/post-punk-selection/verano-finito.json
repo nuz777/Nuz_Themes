@@ -1,0 +1,50 @@
+{
+  "title": "Verano Finito",
+  "authors": ["Post-punk selection"],
+  "albums": ["relax_time"],
+  "date": "01-01-2000",
+  "presentation": {
+    "cover": "/caratulas/%D0%9B%D0%B5%D1%82%D0%BE%20%D0%BD%D0%B5%20%D0%B1%D0%B5%D1%81%D0%BA%D0%BE%D0%BD%D0%B5%D1%87%D0%BD%D0%BE%D0%B5%20%D0%BA%D0%B0%D0%BA%20%D0%B8%20%D1%82%D0%B2%D0%BE%D0%B8%20%D1%81%D0%B8%D0%BB.webp"
+  },
+  "source": {
+    "low": "/music/%D0%9B%D0%B5%D1%82%D0%BE%20%D0%BD%D0%B5%20%D0%B1%D0%B5%D1%81%D0%BA%D0%BE%D0%BD%D0%B5%D1%87%D0%BD%D0%BE%D0%B5%20%D0%BA%D0%B0%D0%BA%20%D0%B8%20%D1%82%D0%B2%D0%BE%D0%B8%20%D1%81%D0%B8%D0%BB%D1%8B%20Post-punk%20selection%20Doomer%20music.mp3"
+  },
+  "timeline": [
+    {
+      "timestamp": 0,
+      "title": "Ploho - Не будем прощаться"
+    },
+    {
+      "timestamp": 239,
+      "title": "Nürnberg – Biessensoŭnasć"
+    },
+    {
+      "timestamp": 419,
+      "title": "corn wave - wake asleep"
+    },
+    {
+      "timestamp": 611,
+      "title": "provulok - The pain won't stop"
+    },
+    {
+      "timestamp": 854,
+      "title": "Буерак - Шаги"
+    },
+    {
+      "timestamp": 1026,
+      "title": "Увула - Дранк"
+    },
+    {
+      "timestamp": 1270,
+      "title": "Спящие - Память о тебе"
+    },
+    {
+      "timestamp": 1420,
+      "title": "Ploho - Горький опыт"
+    },
+    {
+      "timestamp": 1623,
+      "title": "Дисциплина Безбольной Биты - Технология"
+    }
+  ]
+}

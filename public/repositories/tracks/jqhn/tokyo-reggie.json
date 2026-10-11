@@ -1,0 +1,12 @@
+{
+  "title": "Tokyo Reggie",
+  "authors": ["JQHN"],
+  "albums": ["Seychelles 64 [Super Mario 64 Cover]"],
+  "date": "13-05-2025",
+  "presentation": {
+    "cover": "/caratulas/TokyoReggie.webp"
+  },
+  "source": {
+    "low": "/music/Tokyo%20Reggie.mp3"
+  }
+}

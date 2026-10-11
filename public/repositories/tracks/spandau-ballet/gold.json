@@ -1,0 +1,12 @@
+{
+  "title": "Gold",
+  "authors": ["Spandau Ballet"],
+  "albums": ["True"],
+  "date": "04-03-1983",
+  "presentation": {
+    "cover": "/caratulas/GoldSpandau%20Ballet%20.webp"
+  },
+  "source": {
+    "low": "/music/Gold%3B%20Spandau%20Ballet%20(Espa%C3%B1ol%20-%20Ingl%C3%A9s).mp3"
+  }
+}

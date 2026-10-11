@@ -1,0 +1,12 @@
+{
+  "title": "Hey Kids",
+  "authors": ["Molina", "Late Verlane"],
+  "albums": ["Vanilla Shell"],
+  "date": "24-01-2020",
+  "presentation": {
+    "cover": "/caratulas/heykids.webp"
+  },
+  "source": {
+    "low": "/music/Molina%20-%20Hey%20Kids%20%5BTraducci%C3%B3n%20al%20espa%C3%B1ol%5D.mp3"
+  }
+}

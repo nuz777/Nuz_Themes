@@ -1,0 +1,12 @@
+{
+  "title": "Baixo Cristal",
+  "authors": ["Teclas"],
+  "albums": ["Phonk"],
+  "date": "01-01-2000",
+  "presentation": {
+    "cover": "/caratulas/baixocristal.webp"
+  },
+  "source": {
+    "low": "/music/Baixo Cristal Teclas.mp3"
+  }
+}

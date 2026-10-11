@@ -1,0 +1,15 @@
+{
+  "title": "Keep Their Heads Ringin",
+  "authors": ["Dr. Dre"],
+  "albums": ["Friday"],
+  "date": "11-04-1995",
+  "presentation": {
+    "cover": "/caratulas/Dr. Dre- Keep Their Heads Ringin’ (slowed n reverb).webp"
+  },
+  "source": {
+    "low": "/music/nuzw.mp3",
+    "video": {
+      "source": "/video/keeptheirrigin.mp4"
+    }
+  }
+}

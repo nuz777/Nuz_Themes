@@ -1,0 +1,15 @@
+{
+  "title": "Looping the Rooms",
+  "authors": ["Rusino", "Hatsune Miku"],
+  "albums": ["Looping the Rooms (feat. Hatsune Miku)"],
+  "date": "28-11-2025",
+  "presentation": {
+    "cover": "/covers/hatsune-miku/ltr.webp"
+  },
+  "source": {
+    "low": "/music/Looping%20the%20Rooms%20ft.%20Hatsune%20Miku.mp3",
+    "video": {
+      "source": "/video/%E3%83%AB%E3%83%BC%E3%83%97%E3%82%B6%E3%83%AB%E3%83%BC%E3%83%A0%20feat.%20%E5%88%9D%E9%9F%B3%E3%83%9F%E3%82%AF%20Looping%20the%20Rooms%20ft.%20Hatsune%20Miku.mp4"
+    }
+  }
+}
