@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AudioQualityModal } from './audio-quality-modal';
-import { AudioService } from '../../services/audio.service';
-import { AudioQualityService } from '../../services/audio-quality.service';
-import { ToastService } from '../../services/toast.service';
+import { AudioQualityModal } from '@/app/components/audio-quality/audio-quality-modal';
+import { AudioService } from '@/app/services/audio.service';
+import { AudioQualityService } from '@/app/services/audio-quality.service';
+import { ToastService } from '@/app/services/toast.service';
 
 describe('AudioQualityModal', () => {
   let component: AudioQualityModal;

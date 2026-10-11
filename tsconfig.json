@@ -7,6 +7,10 @@
 
     "types": ["node", "vitest/globals"],
 
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AudioQualityButton } from './audio-quality-button';
-import { AudioQualityService } from '../../services/audio-quality.service';
-import { ToastService } from '../../services/toast.service';
+import { AudioQualityButton } from '@/app/components/audio-quality/audio-quality-button';
+import { AudioQualityService } from '@/app/services/audio-quality.service';
+import { ToastService } from '@/app/services/toast.service';
 
 describe('AudioQualityButton', () => {
   let component: AudioQualityButton;

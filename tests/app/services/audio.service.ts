@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { AudioService } from './audio.service';
-import { OfflineStorageService } from './offline-storage.service';
-import { TracksService } from './tracks.service';
-import type { Track } from '../models/track';
+import { AudioService } from '@/app/services/audio.service';
+import { OfflineStorageService } from '@/app/services/offline-storage.service';
+import { TracksService } from '@/app/services/tracks.service';
+import type { Track } from '@/app/models/track';
 
 describe('AudioService Persistence and AutoCache', () => {
   let service: AudioService;

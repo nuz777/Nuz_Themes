@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { AudioQualityService } from './audio-quality.service';
-import { ToastService } from './toast.service';
-import type { Track } from '../models/track';
+import { AudioQualityService } from '@/app/services/audio-quality.service';
+import { ToastService } from '@/app/services/toast.service';
+import type { Track } from '@/app/models/track';
 
 describe('AudioQualityService', () => {
   let service: AudioQualityService;

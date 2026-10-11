@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { CoverCacheService } from './cover-cache.service';
-import type { Track } from '../models/track';
+import { CoverCacheService } from '@/app/services/cover-cache.service';
+import type { Track } from '@/app/models/track';
 
 describe('CoverCacheService', () => {
   let service: CoverCacheService;

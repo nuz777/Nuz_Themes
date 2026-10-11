@@ -43,7 +43,7 @@ This will compile your project and store the build artifacts in the `dist/` dire
 To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
 
 ```bash
-ng test
+pnpm tests
 ```
 
 ## Running end-to-end tests
