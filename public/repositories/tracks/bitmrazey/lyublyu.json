@@ -1,0 +1,15 @@
+{
+  "title": "Люблю",
+  "authors": ["БИТЬМРАЗЕЙ"],
+  "albums": ["Nuz"],
+  "date": "01-01-2000",
+  "presentation": {
+    "cover": "/caratulas/katyusha.webp"
+  },
+  "source": {
+    "low": "/music/%D0%9B%D1%8E%D0%B1%D0%BB%D1%8E-%20%D0%91%D0%98%D0%A2%D0%AC%D0%9C%D0%A0%D0%90%D0%97%D0%95%D0%99.mp3",
+    "video": {
+      "source": "/video/bitmrazey_ljublju.mp4"
+    }
+  }
+}

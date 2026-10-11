@@ -1,0 +1,15 @@
+{
+  "title": "Keep Their Heads Ringin",
+  "authors": ["Dr. Dre", "Nanci Fletcher"],
+  "albums": ["friday"],
+  "date": "11-04-1995",
+  "presentation": {
+    "cover": "/covers/dr-dree/kthr.webp"
+  },
+  "source": {
+    "low": "/music/nuzw.mp3",
+    "video": {
+      "source": "/video/keeptheirrigin.mp4"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "title": "Take Me to Your Heart (Autumn Leaves Mix)",
+  "authors": ["Rick Astley"],
+  "albums": ["Hold Me in Your Arms"],
+  "date": "01-01-1988",
+  "presentation": {
+    "cover": "/caratulas/takemetoyourheart.webp",
+    "lyrics": "/lyrics/takeme.lrc"
+  },
+  "source": {
+    "low": "/music/Take%20Me%20to%20Your%20Heart%20(Autumn%20Leaves%20Mix).mp3"
+  }
+}
