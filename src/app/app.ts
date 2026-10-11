@@ -1,6 +1,5 @@
 import { Component, computed, ElementRef, HostListener, inject, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
 import { Router, RouterOutlet, RouterLink, NavigationStart, NavigationEnd } from '@angular/router';
-import { Subscription } from 'rxjs';
 import { Sidebar } from './components/sidebar/sidebar';
 import { PlayerBar } from './components/player-bar/player-bar';
 import { NowPlaying } from './components/now-playing/now-playing';
