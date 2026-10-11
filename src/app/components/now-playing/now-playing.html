@@ -90,10 +90,10 @@
       </div>
     }
 
-    <!-- Fondo Nevado Tranquilo: Copos de nieve flotando y cayendo lentamente -->
+    <!-- Fondo Nevado Tranquilo: Copos de nieve flotando y cayendo lentamente (oculto en móvil) -->
     @if (showSnow()) {
       <div
-        class="np-snow-container pointer-events-none absolute inset-0 overflow-hidden"
+        class="np-snow-container pointer-events-none absolute inset-0 hidden overflow-hidden md:block"
         aria-hidden="true"
         [class.np-wave-paused]="!audio.isPlaying()"
       >

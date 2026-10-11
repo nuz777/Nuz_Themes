@@ -114,6 +114,15 @@ import { AudioQualityButton } from '../audio-quality/audio-quality-button';
       overflow: hidden;
     }
 
+    @media (max-width: 767px) {
+      .np-snow-container,
+      .np-snowflake-sway,
+      .np-snowflake,
+      .np-snow-mist {
+        display: none !important;
+      }
+    }
+
     .np-snow-mist {
       position: absolute;
       inset: auto 0 0 0;
