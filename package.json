@@ -8,7 +8,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:Nuz_theme_angular": "node dist/Nuz_theme_angular/server/server.mjs",
+    "serve:ssr:nuz_theme_angular": "node dist/nuz_themes/server/server.mjs",
     "fmt": "dprint fmt",
     "fmt:check": "dprint check"
   },

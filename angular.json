@@ -2,15 +2,12 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm",
-    "analytics": "921c312d-8cd3-4fed-b853-d8d955520bea"
+    "analytics": false
   },
-  "newProjectRoot": "projects",
   "projects": {
-    "Nuz_theme_angular": {
+    "nuz-themes": {
       "projectType": "application",
-      "schematics": {},
-      "root": "",
+      "root": ".",
       "sourceRoot": "src",
       "prefix": "app",
       "architect": {
@@ -19,20 +16,10 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              }
-            ],
-            "styles": [
-              "src/styles.css"
-            ],
+            "assets": [{ "glob": "**/*", "input": "public" }],
+            "styles": ["src/styles.css"],
             "server": "src/main.server.ts",
             "outputMode": "server",
-            "security": {
-              "allowedHosts": []
-            },
             "ssr": {
               "entry": "src/server.ts"
             }
@@ -65,10 +52,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "Nuz_theme_angular:build:production"
+              "buildTarget": "nuz-themes:build:production"
             },
             "development": {
-              "buildTarget": "Nuz_theme_angular:build:development"
+              "buildTarget": "nuz-themes:build:development"
             }
           },
           "defaultConfiguration": "development"
