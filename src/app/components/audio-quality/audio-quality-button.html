@@ -1,0 +1,43 @@
+<!-- Botón con transparencia y blur para abrir el selector de calidad de audio -->
+<button
+  type="button"
+  (click)="open()"
+  [attr.aria-label]="'Calidad de audio: ' + currentQuality"
+  class="group relative inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-neutral-200 shadow-lg shadow-black/20 backdrop-blur-md transition-all duration-200 hover:border-white/30 hover:bg-white/20 hover:text-white active:scale-95 cursor-pointer"
+>
+  <!-- Icono de señal / calidad de audio -->
+  <svg
+    class="h-3.5 w-3.5 shrink-0 text-neutral-300 transition group-hover:text-white"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+  </svg>
+
+  @if (!compact()) {
+    <span class="text-[11px] font-medium text-neutral-300 group-hover:text-white">Calidad:</span>
+  }
+
+  <!-- Badge indicadora según la calidad seleccionada -->
+  @switch (currentQuality) {
+    @case ('baja') {
+      <span class="inline-flex items-center gap-1 font-bold text-emerald-400">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+        Baja <span class="text-[10px] opacity-80">(64k)</span>
+      </span>
+    }
+    @case ('media') {
+      <span class="inline-flex items-center gap-1 font-bold text-sky-400">
+        <span class="h-1.5 w-1.5 rounded-full bg-sky-400 shadow-[0_0_6px_#38bdf8]"></span>
+        Media <span class="text-[10px] opacity-80">(128k)</span>
+      </span>
+    }
+    @case ('alta') {
+      <span class="inline-flex items-center gap-1 font-bold text-amber-400">
+        <span class="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24]"></span>
+        Alta <span class="text-[10px] opacity-80">(HD)</span>
+      </span>
+    }
+  }
+</button>

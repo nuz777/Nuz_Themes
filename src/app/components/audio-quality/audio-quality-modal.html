@@ -1,0 +1,164 @@
+<!-- Modal global con fondo difuminado, transparencia y blur (abierto fuera de la barra) -->
+@if (isOpen) {
+  <div
+    class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-quality-modal-backdrop"
+    (click)="close()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="audio-quality-title"
+  >
+    <div
+      class="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-neutral-950/90 p-5 sm:p-6 shadow-2xl shadow-black backdrop-blur-2xl transition-all animate-quality-modal-card"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Cabecera del modal -->
+      <div class="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-md shadow-inner">
+            <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+          </div>
+          <div>
+            <h3 id="audio-quality-title" class="text-sm font-bold uppercase tracking-wider text-white">
+              Calidad de Audio
+            </h3>
+            <p class="text-[11px] text-neutral-400">
+              Ajusta el bitrate según tu conexión para evitar pausas
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="close()"
+          class="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-neutral-400 backdrop-blur-md transition hover:bg-white/15 hover:text-white cursor-pointer"
+          aria-label="Cerrar ventana de calidad"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Lista de opciones de calidad -->
+      <div class="flex flex-col gap-2.5">
+        @for (opt of options; track opt.id) {
+          <div
+            (click)="selectQuality(opt.id)"
+            class="group relative flex flex-col rounded-2xl border p-3.5 transition-all duration-200 cursor-pointer select-none"
+            [class.border-emerald-500/60]="currentQuality === opt.id && opt.id === 'baja'"
+            [class.bg-emerald-500/10]="currentQuality === opt.id && opt.id === 'baja'"
+            [class.shadow-[0_0_20px_rgba(16,185,129,0.15)]]="currentQuality === opt.id && opt.id === 'baja'"
+            [class.border-sky-500/60]="currentQuality === opt.id && opt.id === 'media'"
+            [class.bg-sky-500/10]="currentQuality === opt.id && opt.id === 'media'"
+            [class.shadow-[0_0_20px_rgba(14,165,233,0.15)]]="currentQuality === opt.id && opt.id === 'media'"
+            [class.border-amber-500/60]="currentQuality === opt.id && opt.id === 'alta'"
+            [class.bg-amber-500/10]="currentQuality === opt.id && opt.id === 'alta'"
+            [class.shadow-[0_0_20px_rgba(245,158,11,0.15)]]="currentQuality === opt.id && opt.id === 'alta'"
+            [class.border-white/10]="currentQuality !== opt.id"
+            [class.bg-white/[0.03]]="currentQuality !== opt.id"
+            [class.hover:border-white/20]="currentQuality !== opt.id"
+            [class.hover:bg-white/[0.07]]="currentQuality !== opt.id"
+          >
+            <!-- Fila superior: Radio, Nombre, Bitrate y Badge -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <!-- Indicador Radio -->
+                <span
+                  class="flex h-5 w-5 items-center justify-center rounded-full border transition"
+                  [class.border-emerald-400]="currentQuality === opt.id && opt.id === 'baja'"
+                  [class.border-sky-400]="currentQuality === opt.id && opt.id === 'media'"
+                  [class.border-amber-400]="currentQuality === opt.id && opt.id === 'alta'"
+                  [class.border-neutral-600]="currentQuality !== opt.id"
+                >
+                  @if (currentQuality === opt.id) {
+                    <span
+                      class="h-2.5 w-2.5 rounded-full"
+                      [class.bg-emerald-400]="opt.id === 'baja'"
+                      [class.bg-sky-400]="opt.id === 'media'"
+                      [class.bg-amber-400]="opt.id === 'alta'"
+                    ></span>
+                  }
+                </span>
+
+                <span class="text-sm font-bold text-white">{{ opt.name }}</span>
+                <span class="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-neutral-300">
+                  {{ opt.bitrate }}
+                </span>
+              </div>
+
+              <!-- Badge descriptivo con icono SVG -->
+              <span
+                class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold"
+                [class.border-emerald-500/30]="opt.id === 'baja'"
+                [class.bg-emerald-500/10]="opt.id === 'baja'"
+                [class.text-emerald-300]="opt.id === 'baja'"
+                [class.border-sky-500/30]="opt.id === 'media'"
+                [class.bg-sky-500/10]="opt.id === 'media'"
+                [class.text-sky-300]="opt.id === 'media'"
+                [class.border-amber-500/30]="opt.id === 'alta'"
+                [class.bg-amber-500/10]="opt.id === 'alta'"
+                [class.text-amber-300]="opt.id === 'alta'"
+              >
+                @switch (opt.id) {
+                  @case ('baja') {
+                    <svg class="h-3 w-3 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                    </svg>
+                  }
+                  @case ('media') {
+                    <svg class="h-3 w-3 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                    </svg>
+                  }
+                  @case ('alta') {
+                    <svg class="h-3 w-3 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 12H9.5v-2h-2v2H6V9h1.5v2.5h2V9H11v6zm7-1c0 .55-.45 1-1 1h-4V9h4c.55 0 1 .45 1 1v4zm-1.5-3.5h-2v3h2v-3z" />
+                    </svg>
+                  }
+                }
+                <span>{{ opt.badge }}</span>
+              </span>
+            </div>
+
+            <!-- Descripción -->
+            <p class="mt-1.5 text-xs text-neutral-400 leading-relaxed">
+              {{ opt.description }}
+            </p>
+
+            <!-- AVISO EXPLÍCITO PARA CALIDAD ALTA -->
+            @if (opt.id === 'alta') {
+              <div class="mt-2.5 flex items-start gap-2.5 rounded-xl border border-amber-500/40 bg-amber-950/50 p-2.5 text-xs text-amber-200">
+                <svg class="h-4 w-4 shrink-0 text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div class="leading-relaxed">
+                  <span class="font-bold text-amber-300">Aviso importante:</span>
+                  Se necesita una <strong class="text-white underline decoration-amber-400 underline-offset-2">excelente conexión a internet</strong>. Los archivos son pesados (hasta 28 MB) y tardarán más tiempo en cargar en redes lentas.
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Pie de página informativo -->
+      <div class="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-[11px] text-neutral-400">
+        <span class="flex items-center gap-1.5">
+          <svg class="h-3.5 w-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Cambio inmediato sin reiniciar canción
+        </span>
+        <button
+          type="button"
+          (click)="close()"
+          class="rounded-full bg-white px-4 py-1.5 font-bold text-black shadow-md transition hover:bg-neutral-200 active:scale-95 cursor-pointer"
+        >
+          Listo
+        </button>
+      </div>
+    </div>
+  </div>
+}

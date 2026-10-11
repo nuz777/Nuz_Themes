@@ -19,7 +19,6 @@
   <div
     class="relative overflow-hidden transition-all duration-300 ease-in-out"
     [style.max-height]="showPlayerBar() ? '96px' : '0'"
-    [style.transform]="'translateY(0)'"
     [class.z-30]="showPlayerBar()"
   >
     <footer class="relative grid h-[90px] shrink-0 grid-cols-[1fr_auto] items-center gap-3 border-t border-neutral-900 bg-black px-3 md:grid-cols-3 md:gap-4 md:px-4">
@@ -70,11 +69,13 @@
         </button>
       </div>
       <app-favorite-button [track]="track" />
+      <app-audio-quality-button [compact]="true" class="md:hidden shrink-0" />
     </div>
   } @else {
     <div class="flex items-center gap-3 text-neutral-500">
       <div class="h-10 w-10 rounded bg-neutral-900 md:h-14 md:w-14"></div>
       <span class="text-sm">Nada sonando</span>
+      <app-audio-quality-button [compact]="true" class="md:hidden shrink-0" />
     </div>
   }
 
@@ -168,21 +169,24 @@
     </div>
   </div>
 
-  <div class="hidden items-center justify-end gap-2 md:flex">
-    <svg width="16" height="16" viewBox="0 0 24 24" class="shrink-0 fill-current text-neutral-400">
-      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05a4.5 4.5 0 0 0 2.5-4.02zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z" />
-    </svg>
-    <input
-      type="range"
-      min="0"
-      max="1"
-      step="0.01"
-      [value]="audio.volume()"
-      (input)="onVolume($event)"
-      class="player-range w-24"
-      [style.--progress]="(audio.volume() * 100) + '%'"
-      aria-label="Volumen"
-    />
+  <div class="hidden items-center justify-end gap-3 md:flex">
+    <app-audio-quality-button />
+    <div class="flex items-center gap-2">
+      <svg width="16" height="16" viewBox="0 0 24 24" class="shrink-0 fill-current text-neutral-400">
+        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05a4.5 4.5 0 0 0 2.5-4.02zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z" />
+      </svg>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        [value]="audio.volume()"
+        (input)="onVolume($event)"
+        class="player-range w-24"
+        [style.--progress]="(audio.volume() * 100) + '%'"
+        aria-label="Volumen"
+      />
+    </div>
   </div>
 </footer>
   </div>

@@ -796,6 +796,7 @@ export class TracksService {
           { time: 770, title: 'Стул Сталина - Лэп' },
           { time: 995, title: 'corn wave - nothing' },
         ],
+        backgroundColor: '#000000',
         blurBackground: true,
         hideRhythmBars: true,
         duration: 0,

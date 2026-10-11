@@ -2,10 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { AudioService } from '../../services/audio.service';
 import { DurationService } from '../../services/duration.service';
 import { FavoriteButton } from '../favorite-button/favorite-button';
+import { AudioQualityButton } from '../audio-quality/audio-quality-button';
 
 @Component({
   selector: 'app-player-bar',
-  imports: [FavoriteButton],
+  imports: [FavoriteButton, AudioQualityButton],
   templateUrl: './player-bar.html',
 })
 export class PlayerBar {

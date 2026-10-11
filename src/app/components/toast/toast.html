@@ -3,7 +3,11 @@
     <div
       (click)="openToast(toast)"
       [class.cursor-pointer]="!!toast.route"
-      class="pointer-events-auto flex w-full max-w-sm animate-[toast-in_.25s_ease] items-center gap-3 rounded-lg border border-neutral-700 bg-neutral-900/95 px-4 py-3 text-sm font-semibold text-white shadow-2xl shadow-black"
+      [class.border-neutral-700]="toast.kind === 'success'"
+      [class.border-red-500/60]="toast.kind === 'error'"
+      [class.border-amber-500/60]="toast.kind === 'warning'"
+      [class.border-sky-500/60]="toast.kind === 'info'"
+      class="pointer-events-auto flex w-full max-w-sm animate-[toast-in_.25s_ease] items-center gap-3 rounded-lg border bg-neutral-900/95 px-4 py-3 text-sm font-semibold text-white shadow-2xl shadow-black"
       [attr.role]="toast.route ? 'button' : null"
     >
       @if (toast.cover) {

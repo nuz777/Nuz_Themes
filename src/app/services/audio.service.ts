@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import type { Track } from '../models/track';
 import { OfflineStorageService } from './offline-storage.service';
 import { EqualizerService } from './equalizer.service';
+import { AudioQualityService, type AudioQuality } from './audio-quality.service';
 
 type RepeatMode = 'off' | 'all' | 'one';
 
@@ -19,12 +20,14 @@ export class AudioService {
   readonly playbackError = signal(false);
   readonly loading = signal(false);
 
+  readonly qualityService = inject(AudioQualityService);
   private readonly offline = inject(OfflineStorageService);
   private readonly equalizer = inject(EqualizerService);
 
   private audio: HTMLAudioElement | null = null;
   private queueIndex = -1;
   private warmers = new Map<string, HTMLAudioElement>();
+
 
   get isBrowser(): boolean {
     return typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -54,8 +57,9 @@ export class AudioService {
     if (this.offline.isDownloaded(track.id) || this.offline.isDeviceDownloaded(track.id)) return;
 
     const el = new Audio();
-    el.preload = 'auto';
-    el.src = track.audioUrl;
+    // 'metadata' evita descargar archivos masivos enteros al solo posar el puntero
+    el.preload = 'metadata';
+    el.src = this.qualityService.resolveTrackUrl(track, this.qualityService.quality());
     el.load();
     this.warmers.set(track.id, el);
     this.trimWarmers(track.id);
@@ -122,7 +126,7 @@ export class AudioService {
     } else {
       src = this.offline.isDownloaded(track.id)
         ? await this.offline.resolveSourceUrl(track)
-        : track.audioUrl;
+        : this.qualityService.resolveTrackUrl(track, this.qualityService.quality());
     }
     if (this.currentTrack()?.id !== track.id) return;
 
@@ -134,6 +138,40 @@ export class AudioService {
       await this.audio!.play();
     } catch {
       this.playbackError.set(true);
+    }
+  }
+
+  /**
+   * Cambia la calidad de audio en tiempo real. Si hay una canción sonando,
+   * conmuta la fuente manteniendo la posición de reproducción exacta.
+   */
+  changeQuality(newQuality: AudioQuality): void {
+    if (this.qualityService.quality() === newQuality) return;
+
+    this.qualityService.setQuality(newQuality);
+
+    const track = this.currentTrack();
+    if (!track || !this.audio || track.id.startsWith('user-') || this.offline.isDownloaded(track.id)) {
+      return;
+    }
+
+    const wasPlaying = this.isPlaying();
+    const curTime = this.audio.currentTime || 0;
+    const newSrc = this.qualityService.resolveTrackUrl(track, newQuality);
+
+    if (this.audio.src !== newSrc) {
+      this.audio.src = newSrc;
+      this.audio.load();
+
+      const onLoadedMetadata = () => {
+        if (this.audio) {
+          this.audio.currentTime = curTime;
+          if (wasPlaying) {
+            void this.audio.play();
+          }
+        }
+      };
+      this.audio.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
     }
   }
 

@@ -3,6 +3,12 @@ export interface Chapter {
   title: string;
 }
 
+export interface TrackQualityUrls {
+  baja?: string;
+  media?: string;
+  alta?: string;
+}
+
 export interface Track {
   id: string;
   title: string;
@@ -11,6 +17,7 @@ export interface Track {
   cover: string;
   audioUrl: string;
   duration: number;
+  qualityUrls?: TrackQualityUrls;
   lyricsUrl?: string;
   videoUrl?: string;
   chapters?: Chapter[];
@@ -21,3 +28,4 @@ export interface Track {
   showStars?: boolean;
   showSnow?: boolean;
 }
+

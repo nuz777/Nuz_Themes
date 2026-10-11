@@ -17,10 +17,11 @@ import { ChapterList } from '../chapter-list/chapter-list';
 import { DownloadButton } from '../download-button/download-button';
 import { FavoriteButton } from '../favorite-button/favorite-button';
 import { PipButton } from '../pip-button/pip-button';
+import { AudioQualityButton } from '../audio-quality/audio-quality-button';
 
 @Component({
   selector: 'app-now-playing',
-  imports: [LyricsPanel, ChapterList, DownloadButton, FavoriteButton, PipButton],
+  imports: [LyricsPanel, ChapterList, DownloadButton, FavoriteButton, PipButton, AudioQualityButton],
   templateUrl: './now-playing.html',
   encapsulation: ViewEncapsulation.None,
   styles: [`
@@ -387,11 +388,21 @@ export class NowPlaying {
         );
         this.glowColor.set('#9ec5eb');
       } else if (track?.backgroundColor) {
-        this.background.set(this.ambient.gradientFromColor(track.backgroundColor));
+        if (track.backgroundColor === '#000000' || track.backgroundColor === '#000') {
+          this.background.set('#000000');
+          this.glowColor.set('#000000');
+        } else {
+          this.background.set(this.ambient.gradientFromColor(track.backgroundColor));
+        }
       } else if (track) {
         void this.ambient.getGradient(track.cover).then((g) => this.background.set(g));
       }
-      if (track && !track.showSnow) {
+      if (
+        track &&
+        !track.showSnow &&
+        track.backgroundColor !== '#000000' &&
+        track.backgroundColor !== '#000'
+      ) {
         void this.ambient.getColor(track.cover).then((c) => this.glowColor.set(c));
       }
     });
