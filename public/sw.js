@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nuz-theme-v1';
+const CACHE_NAME = 'nuz-theme-v2';
 const MEDIA_CACHE_NAME = 'nuz-media-v1';
 
 const PRECACHE_ASSETS = [
@@ -43,12 +43,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 1. Navigation requests: Network first, fallback to cached index.html
+  // 1. Navigation requests: Network first, fallback to cached index.html on failure or 404
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => {
-        return caches.match('/index.html') || caches.match('/');
-      })
+      fetch(request)
+        .then(async (response) => {
+          if (!response || response.status === 404) {
+            const cached = (await caches.match('/index.html')) || (await caches.match('/'));
+            if (cached) return cached;
+          }
+          return response;
+        })
+        .catch(async () => {
+          return (await caches.match('/index.html')) || (await caches.match('/')) || new Response('Offline', { status: 503 });
+        })
     );
     return;
   }
