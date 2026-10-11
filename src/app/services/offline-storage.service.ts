@@ -445,6 +445,7 @@ export class OfflineStorageService {
         };
         req.onsuccess = () => resolve(req.result as IDBDatabase);
         req.onerror = () => reject(req.error);
+        req.onblocked = () => reject(new Error('IDB open blocked'));
       });
     }
     return this.dbPromise;
@@ -452,37 +453,57 @@ export class OfflineStorageService {
 
   private getAllIds(db: IDBDatabase): Promise<string[]> {
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readonly');
-      const req = tx.objectStore(STORE).getAllKeys();
-      req.onsuccess = () => resolve(req.result as string[]);
-      req.onerror = () => reject(req.error);
+      try {
+        const tx = db.transaction(STORE, 'readonly');
+        const req = tx.objectStore(STORE).getAllKeys();
+        req.onsuccess = () => resolve(req.result as string[]);
+        req.onerror = () => reject(req.error);
+        tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
   private getBlob(db: IDBDatabase, id: string): Promise<StoredAudio | undefined> {
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readonly');
-      const req = tx.objectStore(STORE).get(id) as IDBRequest<StoredAudio | undefined>;
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
+      try {
+        const tx = db.transaction(STORE, 'readonly');
+        const req = tx.objectStore(STORE).get(id) as IDBRequest<StoredAudio | undefined>;
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+        tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
   private putBlob(db: IDBDatabase, record: StoredAudio): Promise<void> {
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(record);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
+      try {
+        const tx = db.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).put(record);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
   private deleteBlob(db: IDBDatabase, id: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).delete(id);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
+      try {
+        const tx = db.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 }

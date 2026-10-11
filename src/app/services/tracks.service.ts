@@ -135,8 +135,8 @@ export class TracksService {
     if (typeof window === 'undefined') return null;
 
     const file = params.file;
-    const mimeType = file.type || 'audio/mpeg';
-    const audioBlob = new Blob([await file.arrayBuffer()], { type: mimeType });
+    // Usar directamente el File como Blob sin duplicar la memoria RAM con arrayBuffer
+    const audioBlob: Blob = file;
 
     const id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const [coverDataUrl, duration] = await Promise.all([
@@ -146,15 +146,20 @@ export class TracksService {
 
     if (params.cover) {
       try {
-        await this.offline.storeUserCover(id, params.cover);
+        await Promise.race([
+          this.offline.storeUserCover(id, params.cover),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('storeUserCover timeout')), 1500)),
+        ]);
       } catch {
-        // Fallback to data URL
+        // Fallback a data URL en caso de fallo o timeout de IndexedDB
       }
     }
 
+    const safeTitle = (params.title || '').trim() || this.getBaseName(file.name) || 'Pista de audio';
+
     const metadata: UserTrackMetadata = {
       id,
-      title: params.title?.trim() || this.getBaseName(file.name),
+      title: safeTitle,
       artist: params.artist?.trim() || 'Artista desconocido',
       album: params.album?.trim() || 'Música local',
       cover: coverDataUrl,
@@ -166,9 +171,12 @@ export class TracksService {
     this.offline.registerObjectUrl(id, audioUrl);
 
     try {
-      await this.offline.storeUserTrack(id, audioBlob);
+      await Promise.race([
+        this.offline.storeUserTrack(id, audioBlob),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('storeUserTrack timeout')), 2500)),
+      ]);
     } catch {
-      // Audio can continue being served via in-memory URL
+      // Si IndexedDB demora o tiene cupo lleno, el audio se reproduce desde memoria de forma inmediata
     }
 
     this.userTracks.update((items) => [metadata, ...items]);
@@ -286,27 +294,32 @@ export class TracksService {
   private async processCoverImage(file: File | null): Promise<string> {
     if (!file) return '/caratulas/image.webp';
 
-    // 1. Try canvas resize via ObjectURL (handles any size, fast, memory-safe)
-    try {
-      const canvasResult = await this.resizeImageToDataUrl(file, 320, 0.78);
-      if (canvasResult && canvasResult.startsWith('data:image/')) {
-        return canvasResult;
-      }
-    } catch {
-      // Fallback below
-    }
+    return new Promise<string>((resolve) => {
+      const timeout = setTimeout(() => resolve('/caratulas/image.webp'), 1800);
 
-    // 2. Fallback to direct FileReader dataURL
-    try {
-      const fileReaderResult = await this.fileToDataUrl(file);
-      if (fileReaderResult && fileReaderResult.startsWith('data:image/')) {
-        return fileReaderResult;
-      }
-    } catch {
-      // Fallback below
-    }
+      const run = async () => {
+        try {
+          const canvasResult = await this.resizeImageToDataUrl(file, 320, 0.78);
+          if (canvasResult && canvasResult.startsWith('data:image/')) {
+            clearTimeout(timeout);
+            return resolve(canvasResult);
+          }
+        } catch {}
 
-    return '/caratulas/image.webp';
+        try {
+          const fileReaderResult = await this.fileToDataUrl(file);
+          if (fileReaderResult && fileReaderResult.startsWith('data:image/')) {
+            clearTimeout(timeout);
+            return resolve(fileReaderResult);
+          }
+        } catch {}
+
+        clearTimeout(timeout);
+        resolve('/caratulas/image.webp');
+      };
+
+      void run();
+    });
   }
 
   private resizeImageToDataUrl(file: File, maxDim = 320, quality = 0.78): Promise<string> {
@@ -315,12 +328,18 @@ export class TracksService {
         return resolve('/caratulas/image.webp');
       }
 
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error('Image resize timeout'));
+      }, 1500);
+
       const objectUrl = URL.createObjectURL(file);
       const img = new Image();
       let cleaned = false;
       const cleanup = () => {
         if (cleaned) return;
         cleaned = true;
+        clearTimeout(timer);
         try { URL.revokeObjectURL(objectUrl); } catch {}
       };
 
@@ -389,29 +408,52 @@ export class TracksService {
   private async extractAudioDuration(blob: Blob): Promise<number> {
     if (typeof Audio === 'undefined') return 0;
     return new Promise((resolve) => {
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio();
-      audio.preload = 'metadata';
-      const clean = () => {
-        URL.revokeObjectURL(url);
-        audio.removeAttribute('src');
-        audio.load();
-      };
-      audio.onloadedmetadata = () => {
-        const dur = Math.round(audio.duration) || 0;
+      let settled = false;
+      const done = (dur: number) => {
+        if (settled) return;
+        settled = true;
         clean();
         resolve(dur);
       };
-      audio.onerror = () => {
-        clean();
-        resolve(0);
+
+      // Si los metadatos demoran más de 1.5s, continuar inmediatamente para no trabar el guardado
+      const timer = setTimeout(() => done(0), 1500);
+
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio();
+      audio.preload = 'metadata';
+
+      const clean = () => {
+        clearTimeout(timer);
+        try {
+          URL.revokeObjectURL(url);
+          audio.removeAttribute('src');
+          audio.load();
+        } catch {}
       };
-      audio.src = url;
+
+      audio.onloadedmetadata = () => {
+        const dur = Math.round(audio.duration) || 0;
+        done(dur);
+      };
+
+      audio.onerror = () => {
+        done(0);
+      };
+
+      try {
+        audio.src = url;
+        audio.load();
+      } catch {
+        done(0);
+      }
     });
   }
 
   private getBaseName(name: string): string {
-    return name.replace(/\.[^/.]+$/, '').trim() || name.trim();
+    if (!name) return 'Pista de audio';
+    const base = name.replace(/\.[^/.]+$/, '').trim();
+    return base || name.trim() || 'Pista de audio';
   }
 
   private readUserPlaylists(): Playlist[] {

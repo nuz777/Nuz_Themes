@@ -48,8 +48,8 @@ export class PlaylistsPage {
     this.uploadModalOpen.set(true);
   }
 
-  protected closeUploadModal(): void {
-    if (this.isSaving()) return;
+  protected closeUploadModal(force = false): void {
+    if (this.isSaving() && !force) return;
     this.resetUploadForm();
     this.uploadModalOpen.set(false);
   }
@@ -149,26 +149,26 @@ export class PlaylistsPage {
       return;
     }
 
-    const title = this.trackTitle().trim() || file.name.replace(/\.[^/.]+$/, '').trim();
-    if (!title) {
-      this.uploadError.set('El título de la canción es obligatorio');
-      return;
-    }
+    const title = this.trackTitle().trim() || file.name.replace(/\.[^/.]+$/, '').trim() || 'Pista de audio';
 
     this.isSaving.set(true);
     this.uploadError.set(null);
 
     try {
-      await this.tracksService.addUserTrack({
-        file,
-        cover: this.selectedCoverFile(),
-        title,
-        artist: this.trackArtist().trim() || 'Artista desconocido',
-        album: this.trackAlbum().trim() || 'Música local',
-      });
-      this.closeUploadModal();
-    } catch {
-      this.uploadError.set('Ocurrió un error al guardar la canción. Intenta de nuevo.');
+      await Promise.race([
+        this.tracksService.addUserTrack({
+          file,
+          cover: this.selectedCoverFile(),
+          title,
+          artist: this.trackArtist().trim() || 'Artista desconocido',
+          album: this.trackAlbum().trim() || 'Música local',
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al guardar canción')), 6000)),
+      ]);
+      this.closeUploadModal(true);
+    } catch (err) {
+      console.error('Error al guardar canción:', err);
+      this.uploadError.set('Ocurrió un error al procesar el archivo. Intenta de nuevo.');
     } finally {
       this.isSaving.set(false);
     }

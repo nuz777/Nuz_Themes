@@ -106,11 +106,11 @@
   <!-- Modal para Agregar Música y Carátula -->
   @if (uploadModalOpen()) {
     <div
-      class="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
+      class="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md animate-quality-modal-backdrop"
       (click)="closeUploadModal()"
     >
       <div
-        class="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-neutral-950 p-6 shadow-2xl shadow-black"
+        class="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-neutral-950 p-6 shadow-2xl shadow-black animate-quality-modal-card"
         (click)="$event.stopPropagation()"
       >
         <div class="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
