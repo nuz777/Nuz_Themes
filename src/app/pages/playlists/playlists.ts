@@ -86,10 +86,11 @@ export class PlaylistsPage {
         if (embeddedBlob && !this.selectedCoverFile()) {
           const coverFile = new File([embeddedBlob], 'cover.jpg', { type: embeddedBlob.type || 'image/jpeg' });
           this.selectedCoverFile.set(coverFile);
-          if (this.coverPreview()?.startsWith('blob:')) {
-            try { URL.revokeObjectURL(this.coverPreview()!); } catch {}
-          }
-          this.coverPreview.set(URL.createObjectURL(embeddedBlob));
+          const reader = new FileReader();
+          reader.onload = () => {
+            this.coverPreview.set(reader.result as string);
+          };
+          reader.readAsDataURL(embeddedBlob);
         }
       } catch {
         // Continuar con carátula predeterminada si no tiene carátula incrustada
@@ -114,36 +115,23 @@ export class PlaylistsPage {
     this.selectedCoverFile.set(file);
     this.uploadError.set(null);
 
-    if (this.coverPreview()?.startsWith('blob:')) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.coverPreview.set(reader.result as string);
+    };
+    reader.onerror = () => {
       try {
-        URL.revokeObjectURL(this.coverPreview()!);
+        this.coverPreview.set(URL.createObjectURL(file));
       } catch {
         // ignore
       }
-    }
-
-    try {
-      const previewUrl = URL.createObjectURL(file);
-      this.coverPreview.set(previewUrl);
-    } catch {
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.coverPreview.set(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    };
+    reader.readAsDataURL(file);
 
     input.value = '';
   }
 
   protected removeCover(): void {
-    if (this.coverPreview()?.startsWith('blob:')) {
-      try {
-        URL.revokeObjectURL(this.coverPreview()!);
-      } catch {
-        // ignore
-      }
-    }
     this.selectedCoverFile.set(null);
     this.coverPreview.set(null);
     if (this.coverFileInput?.nativeElement) {
@@ -180,7 +168,7 @@ export class PlaylistsPage {
           artist: this.trackArtist().trim() || 'Artista desconocido',
           album: this.trackAlbum().trim() || 'Música local',
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al guardar canción')), 6000)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al guardar canción')), 20000)),
       ]);
       this.closeUploadModal(true);
     } catch (err) {
@@ -192,13 +180,6 @@ export class PlaylistsPage {
   }
 
   private resetUploadForm(): void {
-    if (this.coverPreview()?.startsWith('blob:')) {
-      try {
-        URL.revokeObjectURL(this.coverPreview()!);
-      } catch {
-        // ignore
-      }
-    }
     this.selectedAudioFile.set(null);
     this.selectedCoverFile.set(null);
     this.coverPreview.set(null);

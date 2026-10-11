@@ -143,19 +143,14 @@ export class TracksService {
       this.extractAudioDuration(audioBlob),
     ]);
 
-    // Registrar URL de carátula en memoria de inmediato para que se vea sin recargar
-    if (coverResult.objectUrl && coverResult.objectUrl !== '/caratulas/image.webp') {
-      this.offline.registerObjectUrl(`cover-${id}`, coverResult.objectUrl);
-    }
-
     if (coverResult.blob) {
       try {
         await Promise.race([
           this.offline.storeUserCover(id, coverResult.blob),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('storeUserCover timeout')), 4000)),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('storeUserCover timeout')), 3000)),
         ]);
       } catch {
-        // Fallback: el cover continúa visible desde la URL de memoria
+        // Fallback: el cover continúa visible desde la DataURL segura en memoria y metadata
       }
     }
 
@@ -166,7 +161,7 @@ export class TracksService {
       title: safeTitle,
       artist: params.artist?.trim() || 'Artista desconocido',
       album: params.album?.trim() || 'Música local',
-      cover: coverResult.thumbnail,
+      cover: coverResult.coverUrl,
       duration,
       createdAt: Date.now(),
     };
@@ -177,7 +172,7 @@ export class TracksService {
     try {
       await Promise.race([
         this.offline.storeUserTrack(id, audioBlob),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('storeUserTrack timeout')), 3000)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('storeUserTrack timeout')), 3500)),
       ]);
     } catch {
       // Si IndexedDB demora o tiene cupo lleno, el audio se reproduce desde memoria de forma inmediata
@@ -191,7 +186,7 @@ export class TracksService {
       title: metadata.title,
       artist: metadata.artist,
       album: metadata.album,
-      cover: coverResult.objectUrl,
+      cover: coverResult.coverUrl,
       audioUrl,
       duration: metadata.duration,
     };
@@ -236,13 +231,35 @@ export class TracksService {
     return true;
   }
 
+  updateTrackDuration(id: string, duration: number): void {
+    const dur = Math.round(duration);
+    if (!Number.isFinite(dur) || dur <= 0) return;
+
+    const currentTrack = this.tracks().find((t) => t.id === id);
+    if (currentTrack && currentTrack.duration === dur) return;
+
+    this.tracks.update((tracks) =>
+      tracks.map((t) => (t.id === id ? { ...t, duration: dur } : t)),
+    );
+
+    if (id.startsWith('user-')) {
+      const userMeta = this.userTracks().find((m) => m.id === id);
+      if (userMeta && userMeta.duration !== dur) {
+        this.userTracks.update((items) =>
+          items.map((m) => (m.id === id ? { ...m, duration: dur } : m)),
+        );
+        this.persistUserTracks();
+      }
+    }
+  }
+
   private buildUserTracks(): Track[] {
     return this.userTracks().map((meta) => ({
       id: meta.id,
       title: meta.title,
       artist: meta.artist,
       album: meta.album,
-      cover: this.offline.getUserCoverUrl(meta.id) || meta.cover || '/caratulas/image.webp',
+      cover: meta.cover || '/caratulas/image.webp',
       audioUrl: this.offline.getUserTrackUrl(meta.id) || '',
       duration: meta.duration,
     }));
@@ -251,11 +268,18 @@ export class TracksService {
   private async hydrateUserCovers(): Promise<void> {
     if (typeof window === 'undefined') return;
     for (const meta of this.userTracks()) {
-      const coverUrl = await this.offline.loadUserCoverUrl(meta.id);
-      if (coverUrl) {
+      if (meta.cover && meta.cover !== '/caratulas/image.webp') {
+        continue;
+      }
+      const recoveredCover = await this.offline.loadUserCoverDataUrl(meta.id);
+      if (recoveredCover) {
         this.tracks.update((tracks) =>
-          tracks.map((t) => (t.id === meta.id ? { ...t, cover: coverUrl } : t)),
+          tracks.map((t) => (t.id === meta.id ? { ...t, cover: recoveredCover } : t)),
         );
+        this.userTracks.update((items) =>
+          items.map((m) => (m.id === meta.id ? { ...m, cover: recoveredCover } : m)),
+        );
+        this.persistUserTracks();
       }
     }
   }
@@ -286,7 +310,7 @@ export class TracksService {
       try {
         const lightweight = this.userTracks().map((item) => ({
           ...item,
-          cover: item.cover.length > 40000 ? '/caratulas/image.webp' : item.cover,
+          cover: item.cover.length > 80000 ? '/caratulas/image.webp' : item.cover,
         }));
         window.localStorage.setItem(USER_TRACKS_KEY, JSON.stringify(lightweight));
       } catch {
@@ -298,9 +322,9 @@ export class TracksService {
   async processCoverImage(
     coverSource: Blob | File | null,
     audioBlob?: Blob,
-  ): Promise<{ blob: Blob | null; thumbnail: string; objectUrl: string }> {
+  ): Promise<{ blob: Blob | null; coverUrl: string }> {
     if (typeof window === 'undefined') {
-      return { blob: null, thumbnail: '/caratulas/image.webp', objectUrl: '/caratulas/image.webp' };
+      return { blob: null, coverUrl: '/caratulas/image.webp' };
     }
 
     let source: Blob | File | null = coverSource;
@@ -309,137 +333,103 @@ export class TracksService {
     }
 
     if (!source) {
-      return { blob: null, thumbnail: '/caratulas/image.webp', objectUrl: '/caratulas/image.webp' };
+      return { blob: null, coverUrl: '/caratulas/image.webp' };
     }
 
     try {
-      const processed = await this.optimizeCoverImage(source, 512, 128);
-      return processed;
+      const coverUrl = await this.processImageToDataUrl(source, 360, 0.82);
+      return { blob: source, coverUrl };
     } catch (err) {
       console.warn('Fallback al usar carátula original directa:', err);
       try {
-        const objectUrl = URL.createObjectURL(source);
-        return {
-          blob: source,
-          thumbnail: '/caratulas/image.webp',
-          objectUrl,
-        };
-      } catch {
-        return { blob: null, thumbnail: '/caratulas/image.webp', objectUrl: '/caratulas/image.webp' };
-      }
-    }
-  }
-
-  private async optimizeCoverImage(
-    source: Blob,
-    maxDim = 512,
-    thumbDim = 128,
-  ): Promise<{ blob: Blob; thumbnail: string; objectUrl: string }> {
-    const imgData = await this.decodeImageSource(source);
-    const w = imgData.width;
-    const h = imgData.height;
-    if (!w || !h) throw new Error('Dimensiones inválidas');
-
-    // Recorte cuadrado 1:1 centrado profesional
-    const size = Math.min(w, h);
-    const sx = Math.max(0, Math.round((w - size) / 2));
-    const sy = Math.max(0, Math.round((h - size) / 2));
-    const targetSize = Math.min(size, maxDim);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = targetSize;
-    canvas.height = targetSize;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Contexto canvas 2d no disponible');
-
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-
-    if (imgData.bitmap) {
-      ctx.drawImage(imgData.bitmap, sx, sy, size, size, 0, 0, targetSize, targetSize);
-      imgData.bitmap.close?.();
-    } else if (imgData.img) {
-      ctx.drawImage(imgData.img, sx, sy, size, size, 0, 0, targetSize, targetSize);
-    }
-
-    // Blob de alta resolución (WebP 0.88 con fallback a JPEG)
-    const highResBlob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob(
-        (b) => {
-          if (b) return resolve(b);
-          canvas.toBlob((b2) => resolve(b2 || source), 'image/jpeg', 0.90);
-        },
-        'image/webp',
-        0.88,
-      );
-    });
-
-    // Miniatura liviana (~2KB) para localStorage
-    const thumbCanvas = document.createElement('canvas');
-    thumbCanvas.width = thumbDim;
-    thumbCanvas.height = thumbDim;
-    const thumbCtx = thumbCanvas.getContext('2d');
-    let thumbnail = '/caratulas/image.webp';
-    if (thumbCtx) {
-      thumbCtx.imageSmoothingEnabled = true;
-      thumbCtx.imageSmoothingQuality = 'medium';
-      thumbCtx.drawImage(canvas, 0, 0, thumbDim, thumbDim);
-      try {
-        thumbnail = thumbCanvas.toDataURL('image/webp', 0.65);
-        if (!thumbnail.startsWith('data:image/')) {
-          thumbnail = thumbCanvas.toDataURL('image/jpeg', 0.65);
+        const raw = await this.fileToDataUrl(source);
+        if (raw && raw.startsWith('data:image/')) {
+          return { blob: source, coverUrl: raw };
         }
       } catch {
-        thumbnail = '/caratulas/image.webp';
+        // ignore
       }
+      return { blob: source, coverUrl: '/caratulas/image.webp' };
     }
-
-    const objectUrl = URL.createObjectURL(highResBlob);
-    return {
-      blob: highResBlob,
-      thumbnail,
-      objectUrl,
-    };
   }
 
-  private async decodeImageSource(
-    source: Blob,
-  ): Promise<{ width: number; height: number; bitmap?: ImageBitmap; img?: HTMLImageElement }> {
-    if (typeof createImageBitmap !== 'undefined') {
-      try {
-        const bitmap = await createImageBitmap(source);
-        return { width: bitmap.width, height: bitmap.height, bitmap };
-      } catch {
-        // Fallback a HTMLImageElement
-      }
+  private fileToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string) || '');
+      reader.onerror = () => reject(reader.error || new Error('Error leyendo archivo'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  private async processImageToDataUrl(source: Blob, maxDim = 360, quality = 0.82): Promise<string> {
+    const rawDataUrl = await this.fileToDataUrl(source);
+    if (!rawDataUrl || !rawDataUrl.startsWith('data:image/')) {
+      throw new Error('DataURL inválido');
     }
 
-    return new Promise((resolve, reject) => {
-      const objectUrl = URL.createObjectURL(source);
-      const img = new Image();
+    return new Promise<string>((resolve) => {
       const timer = setTimeout(() => {
-        cleanup();
-        reject(new Error('Timeout decodificando imagen'));
-      }, 5000);
+        resolve(rawDataUrl);
+      }, 2500);
 
-      const cleanup = () => {
-        clearTimeout(timer);
-        try { URL.revokeObjectURL(objectUrl); } catch {}
-      };
-
+      const img = new Image();
       img.onload = () => {
-        const w = img.naturalWidth || img.width;
-        const h = img.naturalHeight || img.height;
-        cleanup();
-        resolve({ width: w, height: h, img });
+        clearTimeout(timer);
+        try {
+          const w = img.naturalWidth || img.width;
+          const h = img.naturalHeight || img.height;
+          if (!w || !h) {
+            return resolve(rawDataUrl);
+          }
+
+          const size = Math.min(w, h);
+          const sx = Math.max(0, Math.round((w - size) / 2));
+          const sy = Math.max(0, Math.round((h - size) / 2));
+          const targetSize = Math.min(size, maxDim);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = targetSize;
+          canvas.height = targetSize;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            return resolve(rawDataUrl);
+          }
+
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, sx, sy, size, size, 0, 0, targetSize, targetSize);
+
+          let output = '';
+          try {
+            output = canvas.toDataURL('image/webp', quality);
+          } catch {
+            output = '';
+          }
+          if (!output || !output.startsWith('data:image/webp')) {
+            try {
+              output = canvas.toDataURL('image/jpeg', quality);
+            } catch {
+              output = '';
+            }
+          }
+
+          if (output && output.startsWith('data:image/')) {
+            resolve(output);
+          } else {
+            resolve(rawDataUrl);
+          }
+        } catch {
+          resolve(rawDataUrl);
+        }
       };
 
       img.onerror = () => {
-        cleanup();
-        reject(new Error('Error cargando imagen'));
+        clearTimeout(timer);
+        resolve(rawDataUrl);
       };
 
-      img.src = objectUrl;
+      img.src = rawDataUrl;
     });
   }
 
@@ -588,7 +578,7 @@ export class TracksService {
         album: 'Animation',
         cover: '/caratulas/image.webp',
         audioUrl: '/music/tempdr.mp3',
-        duration: 0,
+        duration: 127,
       },
       {
         id: 'classic1',
@@ -597,7 +587,7 @@ export class TracksService {
         album: 'Gold',
         cover: '/caratulas/' + encodeURIComponent('GoldSpandau Ballet .webp'),
         audioUrl: '/music/' + encodeURIComponent('Gold; Spandau Ballet (Español - Inglés).mp3'),
-        duration: 0,
+        duration: 227,
       },
       {
         id: 'classic2',
@@ -607,7 +597,7 @@ export class TracksService {
         cover: '/caratulas/' + encodeURIComponent('TameImpala - TheLessIKnowTheBetter.webp'),
         audioUrl: '/music/' + encodeURIComponent('Tame Impala - The Less I Know The Better (Audio).mp3'),
         lyricsUrl: '/lyrics/classic2.lrc',
-        duration: 0,
+        duration: 217,
       },
       {
         id: 'nuz1',
@@ -616,7 +606,7 @@ export class TracksService {
         album: 'Snow Strippers',
         cover: '/caratulas/' + encodeURIComponent('Snow Strippers - Passionate highs.webp'),
         audioUrl: '/music/' + encodeURIComponent('Snow Strippers - Passionate highs (slowed + reverb).mp3'),
-        duration: 0,
+        duration: 249,
       },
       {
         id: 'nuz2',
@@ -625,7 +615,7 @@ export class TracksService {
         album: 'Tiishe',
         cover: '/caratulas/' + encodeURIComponent('StuckNextToYo -Tiishe.webp'),
         audioUrl: '/music/' + encodeURIComponent('Stuck Next To You - Tiishe [Slowed] (prod.voidrave99).mp3'),
-        duration: 0,
+        duration: 126,
       },
       {
         id: 'nuz3',
@@ -634,7 +624,7 @@ export class TracksService {
         album: 'Nuz',
         cover: '/caratulas/lose_me.webp',
         audioUrl: '/music/' + encodeURIComponent('lose me (slowed).mp3'),
-        duration: 0,
+        duration: 194,
       },
       {
         id: 'sni1',
@@ -643,7 +633,7 @@ export class TracksService {
         album: 'Kurxxed Emeraldz',
         cover: '/caratulas/kurxedEzxmelards.webp',
         audioUrl: '/music/' + encodeURIComponent('__Kurxxed Ultimate__ Kurxxed Emeraldz Mashup.mp3'),
-        duration: 0,
+        duration: 322,
       },
       {
         id: 'sni2',
@@ -652,7 +642,7 @@ export class TracksService {
         album: 'maple',
         cover: '/caratulas/chaisaw.webp',
         audioUrl: '/music/' + encodeURIComponent('chainsaww-maple ft. slaywitme(siouxxie)(slowed).mp3'),
-        duration: 0,
+        duration: 193,
       },
       {
         id: 'sni3',
@@ -661,7 +651,7 @@ export class TracksService {
         album: 'Nuz',
         cover: '/caratulas/sobitter.webp',
         audioUrl: '/music/' + encodeURIComponent('so bitter (super slowed).mp3'),
-        duration: 0,
+        duration: 172,
       },
       {
         id: 'sni4',
@@ -670,7 +660,7 @@ export class TracksService {
         album: 'Lumi Athena',
         cover: '/caratulas/smokeofflumiathena.webp',
         audioUrl: '/music/' + encodeURIComponent('Lumi Athena - SMOKE IT OFF! ft. jnhygs.mp3'),
-        duration: 0,
+        duration: 120,
       },
       {
         id: 'sni5',
@@ -679,7 +669,7 @@ export class TracksService {
         album: 'Snicore',
         cover: '/caratulas/babyjane.webp',
         audioUrl: '/music/' + encodeURIComponent('Baby Jane - One Night in Berlin (Nightcore).mp3'),
-        duration: 0,
+        duration: 165,
       },
       {
         id: 'ph1',
@@ -688,7 +678,7 @@ export class TracksService {
         album: 'Nuz',
         cover: '/caratulas/AUTOMOTIVOANTI-CELESTIAL .webp',
         audioUrl: '/music/' + encodeURIComponent('AUTOMOTIVO ANTI-CELESTIAL.mp3'),
-        duration: 0,
+        duration: 220,
       },
       {
         id: 'ph2',
@@ -697,7 +687,7 @@ export class TracksService {
         album: 'Phonk',
         cover: '/caratulas/' + encodeURIComponent('MONTAGEM DOENÇA HIPERTÉTICA (Slowed).webp'),
         audioUrl: '/music/' + encodeURIComponent('MONTAGEM DOENÇA HIPERTÉTICA (Slowed).mp3'),
-        duration: 0,
+        duration: 103,
       },
       {
         id: 'ph3',
@@ -706,7 +696,7 @@ export class TracksService {
         album: 'Phonk',
         cover: '/caratulas/MontagenGritos.webp',
         audioUrl: '/music/Montagem Gritos Talento 3 (super slowed).mp3',
-        duration: 0,
+        duration: 94,
       },
       {
         id: 'ph4',
@@ -716,7 +706,7 @@ export class TracksService {
         cover: '/caratulas/montagemdimesion.webp',
         videoUrl: '/video/' + encodeURIComponent('MONTAGEM DIMENSION.mp4'),
         audioUrl: '/music/MONTAGEM DIMENSION.mp3',
-        duration: 0,
+        duration: 69,
       },
 
        {
@@ -726,7 +716,7 @@ export class TracksService {
         album: 'Phonk',
         cover: '/caratulas/heavylove.webp',
         audioUrl: '/music/HeavyLove.mp3',
-        duration: 0,
+        duration: 142,
       },
       {
         id: 'ph5',
@@ -735,7 +725,7 @@ export class TracksService {
         album: 'Phonk',
         cover: '/caratulas/baixocristal.webp',
         audioUrl: '/music/Baixo Cristal Teclas.mp3',
-        duration: 0,
+        duration: 109,
       },
       {
         id: 'ph6',
@@ -744,7 +734,7 @@ export class TracksService {
         album: 'Phonk',
         cover: '/caratulas/agome.webp',
         audioUrl: '/music/OGAME.mp3',
-        duration: 0,
+        duration: 114,
       },
       {
         id: 'classic3',
@@ -754,7 +744,7 @@ export class TracksService {
         cover: '/caratulas/takemetoyourheart.webp',
         audioUrl: '/music/' + encodeURIComponent('Take Me to Your Heart (Autumn Leaves Mix).mp3'),
         lyricsUrl: '/lyrics/takeme.lrc',
-        duration: 0,
+        duration: 400,
       },
       {
         id: 'classic4',
@@ -763,7 +753,7 @@ export class TracksService {
         album: 'Classic',
         cover: '/caratulas/' + encodeURIComponent('Gyoretsu no dekiru Eirin Shinryojo.webp'),
         audioUrl: '/music/' + encodeURIComponent('Gyoretsu no dekiru Eirin Shinryojo.mp3'),
-        duration: 0,
+        duration: 207,
       },
       {
         id: 'anim1',
@@ -772,7 +762,7 @@ export class TracksService {
         album: 'Nuz',
         cover: '/caratulas/TokyoReggie.webp',
         audioUrl: '/music/' + encodeURIComponent('Tokyo Reggie.mp3'),
-        duration: 0,
+        duration: 260,
       },
       {
         id: 'anim2',
@@ -781,7 +771,7 @@ export class TracksService {
         album: 'Animation',
         cover: '/caratulas/ROMANCEPLANET.webp',
         audioUrl: '/music/' + encodeURIComponent('ROMANCEPLANET w STAKILLAZ - FALL FROM THE SKY PT.2 (OFFICIAL AUDIO).mp3'),
-        duration: 0,
+        duration: 98,
       },
       {
         id: 'anim3',
@@ -790,7 +780,7 @@ export class TracksService {
         album: 'Animation',
         cover: '/caratulas/ashide.webp',
         audioUrl: '/music/' + encodeURIComponent('aishite, aishite, aishite kikuo.mp3'),
-        duration: 0,
+        duration: 250,
       },
       {
         id: 'anim4',
@@ -800,7 +790,7 @@ export class TracksService {
         cover: '/caratulas/miku.webp',
         audioUrl: '/music/' + encodeURIComponent('Looping the Rooms ft. Hatsune Miku.mp3'),
         videoUrl: '/video/' + encodeURIComponent('ループザルーム feat. 初音ミク Looping the Rooms ft. Hatsune Miku.mp4'),
-        duration: 0,
+        duration: 134,
       },
       {
         id: 'anim5',
@@ -809,7 +799,7 @@ export class TracksService {
         album: 'Animation',
         cover: '/caratulas/Alors on danse.webp',
         audioUrl: '/music/Alors on danse (Radio Edit).mp3',
-        duration: 0,
+        duration: 208,
       },
       {
         id: 'anim6',
@@ -818,7 +808,7 @@ export class TracksService {
         album: 'Animation',
         cover: '/caratulas/heykids.webp',
         audioUrl: '/music/' + encodeURIComponent('Molina - Hey Kids [Traducción al español].mp3'),
-        duration: 0,
+        duration: 237,
       },
       {
         id: 'anim7',
@@ -828,7 +818,7 @@ export class TracksService {
         cover: '/caratulas/Dr. Dre- Keep Their Heads Ringin’ (slowed n reverb).webp',
         audioUrl: '/music/' + encodeURIComponent('nuzw.mp3'),
         videoUrl: '/video/keeptheirrigin.mp4',
-        duration: 0,
+        duration: 338,
       },
       {
         id: 'anim8',
@@ -840,7 +830,7 @@ export class TracksService {
         backgroundColor: '#0a1728',
         showSnow: true,
         hideRhythmBars: true,
-        duration: 0,
+        duration: 343,
       },
       {
         id: 'nuz4',
@@ -849,7 +839,7 @@ export class TracksService {
         album: 'Russian Car Driver HD',
         cover: '/caratulas/russiandriver.webp',
         audioUrl: '/music/' + encodeURIComponent('Russian Car Driver HD OST - Opening Music (Without any background noises).mp3'),
-        duration: 0,
+        duration: 107,
       },
       {
         id: 'nuz5',
@@ -858,7 +848,7 @@ export class TracksService {
         album: 'Nuz',
         cover: '/caratulas/' + encodeURIComponent('𝐁𝐫𝐨𝐨𝐤𝐥𝐲𝐧𝐁𝐥𝐨𝐨𝐝𝐏𝐨𝐩𝐗𝐕𝐚𝐜𝐚𝐭𝐢𝐨𝐧𝐁𝐢𝐛𝐥𝐞𝐒𝐜𝐡𝐨𝐨𝐥.webp'),
         audioUrl: '/music/' + encodeURIComponent('𝐁𝐫𝐨𝐨𝐤𝐥𝐲𝐧 𝐁𝐥𝐨𝐨𝐝 𝐏𝐨𝐩 𝐗 𝐕𝐚𝐜𝐚𝐭𝐢𝐨𝐧 𝐁𝐢𝐛𝐥𝐞 𝐒𝐜𝐡𝐨𝐨𝐥 (𝐒𝐥𝐨𝐰𝐞𝐝).mp3'),
-        duration: 0,
+        duration: 324,
       },
       {
         id: 'nuz6',
@@ -867,7 +857,7 @@ export class TracksService {
         album: 'Nuz',
         cover: '/caratulas/makeuwhole.webp',
         audioUrl: '/music/Make U Whole.mp3',
-        duration: 0,
+        duration: 463,
       },
       {
         id: 'doom1',
@@ -877,7 +867,7 @@ export class TracksService {
         cover: '/caratulas/' + encodeURIComponent('Панелька - Счастье за горами (official music video 2022)  Russian doomer video.webp'),
         audioUrl: '/music/' + encodeURIComponent('Панелька - Счастье за горами (official music video 2022)  Russian doomer video.mp3'),
         lyricsUrl: '/lyrics/doom1.lrc',
-        duration: 0,
+        duration: 159,
       },
       {
         id: 'nuz7',
@@ -887,7 +877,7 @@ export class TracksService {
         cover: '/caratulas/katyusha.webp',
         audioUrl: '/music/' + encodeURIComponent('Люблю- БИТЬМРАЗЕЙ.mp3'),
         videoUrl: '/video/' + encodeURIComponent('bitmrazey_ljublju.mp4'),
-        duration: 0,
+        duration: 93,
       },
       {
         id: 'nuz8',
@@ -896,7 +886,7 @@ export class TracksService {
         album: 'Nuz',
         cover: '/caratulas/Baseball Bat Discipline -Technology.webp',
         audioUrl: '/music/' + encodeURIComponent('Baseball Bat Discipline -Technology.mp3'),
-        duration: 0, // This track is a joke, but it is still a track.
+        duration: 222,
       },
       {
         id: 'nuz9',
@@ -918,7 +908,7 @@ export class TracksService {
         ],
         blurBackground: true,
         hideRhythmBars: true,
-        duration: 0,
+        duration: 1846,
       },
       {
         id: 'relax2',
@@ -939,7 +929,7 @@ export class TracksService {
         backgroundImage: '/caratulas/fondoMusicrusa.webp',
         blurBackground: true,
         hideRhythmBars: true,
-        duration: 0,
+        duration: 1196,
       },
       {
         id: 'relax3',
@@ -953,7 +943,7 @@ export class TracksService {
         showStars: true,
         blurBackground: true,
         hideRhythmBars: true,
-        duration: 0,
+        duration: 188,
       },
     ];
   }

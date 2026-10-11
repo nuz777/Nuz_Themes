@@ -1,18 +1,22 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { TracksService } from './tracks.service';
 
-interface DurationTarget {
+export interface DurationTarget {
   id: string;
   audioUrl: string;
 }
 
+const CACHE_KEY = 'nuz-durations-cache';
+
 @Injectable({ providedIn: 'root' })
 export class DurationService {
-  readonly durations = signal<Record<string, number>>({});
+  private readonly tracksService = inject(TracksService);
+  readonly durations = signal<Record<string, number>>(this.loadCachedDurations());
 
-  private readonly loading = new Set<string>();
+  private readonly inFlight = new Set<string>();
+  private readonly queue: DurationTarget[] = [];
+  private isProcessing = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
-  private pending: DurationTarget[] = [];
-  private running = false;
 
   get isBrowser(): boolean {
     return typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -22,86 +26,144 @@ export class DurationService {
     return this.durations()[id] ?? 0;
   }
 
+  store(id: string, duration: number): void {
+    const dur = Math.round(duration);
+    if (!Number.isFinite(dur) || dur <= 0) return;
+    if (this.durations()[id] === dur) return;
+
+    this.durations.update((prev) => {
+      const next = { ...prev, [id]: dur };
+      this.persistCache(next);
+      return next;
+    });
+
+    this.tracksService.updateTrackDuration(id, dur);
+  }
+
   preload(tracks: DurationTarget[]): void {
     if (!this.isBrowser) return;
 
-    this.pending = tracks;
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = setTimeout(() => {
-      this.timer = null;
-      this.schedule();
-    }, 120);
-  }
+    let added = false;
+    for (const track of tracks) {
+      if (!track?.id || !track.audioUrl) continue;
+      if (this.durations()[track.id]) continue;
+      if (this.inFlight.has(track.id)) continue;
+      if (this.queue.some((q) => q.id === track.id)) continue;
 
-  /** Se espera a que el navegador esté libre para no competir con la reproducción. */
-  private schedule(): void {
-    const run = (): void => {
-      void this.run();
-    };
+      this.queue.push(track);
+      added = true;
+    }
 
-    if (typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(run, { timeout: 3000 });
-    } else {
-      run();
+    if (added && !this.isProcessing) {
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = setTimeout(() => {
+        this.timer = null;
+        void this.processQueue();
+      }, 50);
     }
   }
 
-  /**
-   * Las duraciones se leen de a una: pedir la metadata de toda la lista a la vez
-   * saturaba la conexión y retrasaba la canción que el usuario acababa de elegir.
-   */
-  private async run(): Promise<void> {
-    if (this.running) return;
-    this.running = true;
+  private async processQueue(): Promise<void> {
+    if (this.isProcessing) return;
+    this.isProcessing = true;
 
     try {
-      for (const track of this.pending) {
-        if (this.durations()[track.id] !== undefined) continue;
-        if (this.loading.has(track.id)) continue;
-        if (!track.audioUrl) continue;
-
-        await this.loadMetadata(track);
-        await new Promise((resolve) => setTimeout(resolve, 150));
+      while (this.queue.length > 0) {
+        // Procesar hasta 4 pistas simultáneamente en paralelo
+        const batch = this.queue.splice(0, 4);
+        await Promise.allSettled(
+          batch.map(async (track) => {
+            if (this.durations()[track.id]) return;
+            this.inFlight.add(track.id);
+            try {
+              const dur = await this.fetchDuration(track.audioUrl);
+              if (dur > 0) {
+                this.store(track.id, dur);
+              }
+            } finally {
+              this.inFlight.delete(track.id);
+            }
+          }),
+        );
       }
     } finally {
-      this.running = false;
+      this.isProcessing = false;
     }
   }
 
-  private loadMetadata(track: DurationTarget): Promise<void> {
-    if (typeof Audio === 'undefined') return Promise.resolve();
-
-    this.loading.add(track.id);
-    const audio = new Audio();
-    audio.preload = 'metadata';
-    audio.volume = 0;
-    audio.muted = true;
+  private fetchDuration(audioUrl: string): Promise<number> {
+    if (typeof Audio === 'undefined') return Promise.resolve(0);
 
     return new Promise((resolve) => {
-      const done = (): void => {
-        this.cleanup(audio, track.id);
-        resolve();
+      const audio = new Audio();
+      audio.preload = 'metadata';
+      audio.volume = 0;
+      audio.muted = true;
+
+      let settled = false;
+      const cleanup = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        audio.removeAttribute('src');
+        try { audio.load(); } catch {}
       };
 
-      audio.addEventListener('loadedmetadata', () => {
-        this.store(track.id, audio.duration);
-        done();
-      });
-      audio.addEventListener('error', done);
-      audio.addEventListener('stalled', done);
+      const timer = setTimeout(() => {
+        cleanup();
+        resolve(0);
+      }, 3500);
 
-      audio.src = track.audioUrl;
+      const done = (dur: number) => {
+        cleanup();
+        resolve(Math.round(dur) || 0);
+      };
+
+      audio.onloadedmetadata = () => {
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          done(audio.duration);
+        }
+      };
+
+      audio.ondurationchange = () => {
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          done(audio.duration);
+        }
+      };
+
+      audio.oncanplay = () => {
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          done(audio.duration);
+        }
+      };
+
+      audio.onerror = () => done(0);
+      audio.onstalled = () => done(0);
+
+      try {
+        audio.src = audioUrl;
+      } catch {
+        done(0);
+      }
     });
   }
 
-  private store(id: string, duration: number): void {
-    if (!Number.isFinite(duration) || duration <= 0) return;
-    this.durations.update((prev) => ({ ...prev, [id]: duration }));
+  private loadCachedDurations(): Record<string, number> {
+    if (typeof window === 'undefined') return {};
+    try {
+      const raw = window.localStorage.getItem(CACHE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
   }
 
-  private cleanup(audio: HTMLAudioElement, id: string): void {
-    this.loading.delete(id);
-    audio.removeAttribute('src');
-    audio.load();
+  private persistCache(data: Record<string, number>): void {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    } catch {
+      // ignore
+    }
   }
 }

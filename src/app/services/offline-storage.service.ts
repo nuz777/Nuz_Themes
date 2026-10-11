@@ -126,6 +126,26 @@ export class OfflineStorageService {
     return null;
   }
 
+  async loadUserCoverDataUrl(id: string): Promise<string | null> {
+    const key = `cover-${id}`;
+    if (!this.isSupported) return null;
+    try {
+      const db = await this.getDb();
+      const stored = await this.getBlob(db, key);
+      if (stored?.blob) {
+        return await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string) || '');
+          reader.onerror = () => resolve('');
+          reader.readAsDataURL(stored.blob);
+        });
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
   removeUserTrack(id: string): void {
     const cached = this.objectUrls.get(id);
     if (cached) {

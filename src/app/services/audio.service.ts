@@ -4,6 +4,7 @@ import { OfflineStorageService } from './offline-storage.service';
 import { EqualizerService } from './equalizer.service';
 import { AudioQualityService, type AudioQuality } from './audio-quality.service';
 import { CoverCacheService } from './cover-cache.service';
+import { DurationService } from './duration.service';
 
 type RepeatMode = 'off' | 'all' | 'one';
 
@@ -25,6 +26,7 @@ export class AudioService {
   private readonly offline = inject(OfflineStorageService);
   private readonly equalizer = inject(EqualizerService);
   private readonly coverCache = inject(CoverCacheService);
+  private readonly durationService = inject(DurationService);
 
   private audio: HTMLAudioElement | null = null;
   private queueIndex = -1;
