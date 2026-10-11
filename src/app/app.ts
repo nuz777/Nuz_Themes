@@ -13,7 +13,7 @@ import { MediaSessionService } from './services/media-session.service';
 import type { Track } from './models/track';
 
 const BOOT_LOADER_ID = 'boot-loader';
-const MIN_VISIBLE_MS = 450;
+const MIN_VISIBLE_MS = 120;
 
 @Component({
   selector: 'app-root',

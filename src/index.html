@@ -8,7 +8,9 @@
   <link rel="icon" type="image/x-icon" href="favicom.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="preload" href="boot-logo.webp" as="image" type="image/webp">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"></noscript>
   <style>
     #boot-loader {
       position: fixed;
@@ -88,7 +90,7 @@
 </head>
 <body>
   <div id="boot-loader" aria-hidden="true">
-    <img src="favicom.ico" alt="" class="boot-logo" />
+    <img src="boot-logo.webp" alt="Nuz" width="88" height="88" class="boot-logo" />
     <div class="boot-dots">
       <span></span>
       <span></span>

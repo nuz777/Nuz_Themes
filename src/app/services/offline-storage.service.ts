@@ -8,6 +8,7 @@ interface StoredAudio {
   id: string;
   blob: Blob;
   savedAt: number;
+  isExplicit?: boolean;
 }
 
 const DB_NAME = 'nuz-offline';
@@ -41,6 +42,10 @@ export class OfflineStorageService {
 
   isDeviceDownloaded(id: string): boolean {
     return this.deviceDownloads().has(id);
+  }
+
+  isCached(id: string): boolean {
+    return this.objectUrls.has(id) || this.isDownloaded(id) || this.isDeviceDownloaded(id);
   }
 
   deviceCount(): number {
@@ -212,9 +217,11 @@ export class OfflineStorageService {
         if (track.id.startsWith('user-')) {
           return url;
         }
-        this.status.update((prev) =>
-          prev[track.id] === 'downloaded' ? prev : { ...prev, [track.id]: 'downloaded' },
-        );
+        if (stored.isExplicit !== false && this.isDeviceDownloaded(track.id)) {
+          this.status.update((prev) =>
+            prev[track.id] === 'downloaded' ? prev : { ...prev, [track.id]: 'downloaded' },
+          );
+        }
         return url;
       }
     } catch {
@@ -224,11 +231,101 @@ export class OfflineStorageService {
     return track.audioUrl;
   }
 
+  /**
+   * Guarda de manera silenciosa una canción en IndexedDB para que
+   * jamás vuelva a requerir descarga de red cuando se vuelva a reproducir.
+   */
+  async autoCache(track: Track): Promise<void> {
+    if (!this.isSupported) return;
+    if (!track.audioUrl || track.id.startsWith('user-')) return;
+    if (this.objectUrls.has(track.id)) return;
+    if (this.inFlight.has(track.id)) return;
+
+    const inFlightPromise = (async () => {
+      try {
+        const db = await this.getDb();
+        const existing = await this.getBlob(db, track.id);
+        if (existing) {
+          if (!this.objectUrls.has(track.id)) {
+            this.objectUrls.set(track.id, URL.createObjectURL(existing.blob));
+          }
+          return;
+        }
+
+        const res = await fetch(track.audioUrl);
+        if (!res.ok) return;
+        const blob = await res.blob();
+
+        await this.putBlob(db, {
+          id: track.id,
+          blob,
+          savedAt: Date.now(),
+          isExplicit: false,
+        });
+
+        const objUrl = URL.createObjectURL(blob);
+        this.objectUrls.set(track.id, objUrl);
+
+        await this.pruneAutoCache(40);
+      } catch {
+        // Auto-cache en segundo plano falla en silencio
+      } finally {
+        this.inFlight.delete(track.id);
+      }
+    })();
+
+    this.inFlight.set(track.id, inFlightPromise);
+    return inFlightPromise;
+  }
+
+  private async pruneAutoCache(maxCount = 40): Promise<void> {
+    if (!this.isSupported) return;
+    try {
+      const db = await this.getDb();
+      const tx = db.transaction(STORE, 'readonly');
+      const store = tx.objectStore(STORE);
+      const req = store.getAll();
+
+      const records: StoredAudio[] = await new Promise((resolve, reject) => {
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+
+      const autoCached = records
+        .filter((r) => r.isExplicit === false && !r.id.startsWith('user-') && !r.id.startsWith('cover-'))
+        .sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
+
+      if (autoCached.length > maxCount) {
+        const toDelete = autoCached.slice(0, autoCached.length - maxCount);
+        for (const item of toDelete) {
+          await this.deleteBlob(db, item.id).catch(() => {});
+          const objUrl = this.objectUrls.get(item.id);
+          if (objUrl) {
+            URL.revokeObjectURL(objUrl);
+            this.objectUrls.delete(item.id);
+          }
+        }
+      }
+    } catch {
+      // Ignorar fallo en limpieza
+    }
+  }
+
   private async runDownload(track: Track): Promise<void> {
     try {
-      const blob = await this.fetchAndStore(track);
+      let blob: Blob;
+      const db = await this.getDb();
+      const existing = await this.getBlob(db, track.id);
+      if (existing?.blob) {
+        blob = existing.blob;
+        existing.isExplicit = true;
+        await this.putBlob(db, existing);
+      } else {
+        blob = await this.fetchAndStore(track);
+      }
       const withCover = await this.embedCover(track, blob);
       this.saveToDevice(track, withCover);
+      this.setStatus(track.id, 'downloaded');
       this.toast.show(
         `"${track.title}" descargada con su carátula y guardada en tu dispositivo`,
         'success',
@@ -261,8 +358,19 @@ export class OfflineStorageService {
       const ids = await this.getAllIds(db);
       if (!ids.length) return;
 
+      const deviceSaved = this.deviceDownloads();
       const statuses: Record<string, DownloadStatus> = {};
-      for (const id of ids) statuses[id] = 'downloaded';
+      for (const id of ids) {
+        if (id.startsWith('user-') || id.startsWith('cover-')) continue;
+        if (deviceSaved.has(id)) {
+          statuses[id] = 'downloaded';
+        } else {
+          const stored = await this.getBlob(db, id);
+          if (stored && stored.isExplicit) {
+            statuses[id] = 'downloaded';
+          }
+        }
+      }
       this.status.set(statuses);
     } catch {
       // Sin IndexedDB disponible; las descargas no se muestran.
@@ -285,7 +393,7 @@ export class OfflineStorageService {
         : await res.blob();
 
       const db = await this.getDb();
-      await this.putBlob(db, { id: track.id, blob, savedAt: Date.now() });
+      await this.putBlob(db, { id: track.id, blob, savedAt: Date.now(), isExplicit: true });
       this.setStatus(track.id, 'downloaded');
       this.setProgress(track.id, 100);
       return blob;
