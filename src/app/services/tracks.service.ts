@@ -128,6 +128,7 @@ export class TracksService {
   async addUserTrack(params: {
     file: File;
     cover?: File | null;
+    noCover?: boolean;
     title?: string;
     artist?: string;
     album?: string;
@@ -139,7 +140,7 @@ export class TracksService {
     const id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
     const [coverResult, duration] = await Promise.all([
-      this.processCoverImage(params.cover || null, audioBlob),
+      this.processCoverImage(params.cover || null, audioBlob, { noCover: params.noCover }),
       this.extractAudioDuration(audioBlob),
     ]);
 
@@ -253,6 +254,43 @@ export class TracksService {
     }
   }
 
+  async updateTrackCover(id: string, file: Blob | File): Promise<string | null> {
+    if (typeof window === 'undefined') return null;
+
+    try {
+      const coverResult = await this.processCoverImage(file);
+      if (!coverResult.coverUrl) return null;
+
+      this.tracks.update((tracks) =>
+        tracks.map((t) => (t.id === id ? { ...t, cover: coverResult.coverUrl } : t)),
+      );
+
+      this.userTracks.update((items) =>
+        items.map((m) => (m.id === id ? { ...m, cover: coverResult.coverUrl } : m)),
+      );
+      this.persistUserTracks();
+
+      if (coverResult.blob) {
+        try {
+          await this.offline.storeUserCover(id, coverResult.blob);
+        } catch {
+          // ignore
+        }
+      }
+
+      const updatedTrack = this.getTrack(id);
+      if (updatedTrack) {
+        this.toast.show(`Carátula de "${updatedTrack.title}" actualizada`, 'success', coverResult.coverUrl, updatedTrack.title);
+      }
+
+      return coverResult.coverUrl;
+    } catch (err) {
+      console.error('Error al actualizar carátula:', err);
+      this.toast.show('No se pudo actualizar la carátula', 'error');
+      return null;
+    }
+  }
+
   private buildUserTracks(): Track[] {
     return this.userTracks().map((meta) => ({
       id: meta.id,
@@ -322,8 +360,13 @@ export class TracksService {
   async processCoverImage(
     coverSource: Blob | File | null,
     audioBlob?: Blob,
+    options?: { noCover?: boolean },
   ): Promise<{ blob: Blob | null; coverUrl: string }> {
     if (typeof window === 'undefined') {
+      return { blob: null, coverUrl: '/caratulas/image.webp' };
+    }
+
+    if (options?.noCover) {
       return { blob: null, coverUrl: '/caratulas/image.webp' };
     }
 
@@ -436,7 +479,7 @@ export class TracksService {
   async extractEmbeddedCover(blob: Blob): Promise<Blob | null> {
     if (typeof window === 'undefined') return null;
     try {
-      const sliceSize = Math.min(blob.size, 3 * 1024 * 1024);
+      const sliceSize = Math.min(blob.size, 10 * 1024 * 1024);
       const head = await blob.slice(0, sliceSize).arrayBuffer();
       const u8 = new Uint8Array(head);
       if (u8.length < 10) return null;
@@ -449,41 +492,53 @@ export class TracksService {
 
         while (pos < max - 10) {
           const frameId = String.fromCharCode(u8[pos], u8[pos + 1], u8[pos + 2], u8[pos + 3]);
-          if (!/^[A-Z0-9]{4}$/.test(frameId)) break;
+          if (!/^[A-Z0-9]{3,4}$/.test(frameId)) break;
 
           let frameSize: number;
+          let headerOffset = 10;
           if (v === 4) {
             frameSize = ((u8[pos + 4] & 0x7f) << 21) | ((u8[pos + 5] & 0x7f) << 14) | ((u8[pos + 6] & 0x7f) << 7) | (u8[pos + 7] & 0x7f);
-          } else {
+          } else if (v === 3) {
             frameSize = (u8[pos + 4] << 24) | (u8[pos + 5] << 16) | (u8[pos + 6] << 8) | u8[pos + 7];
+          } else {
+            // ID3v2.2 PIC frame
+            frameSize = (u8[pos + 3] << 16) | (u8[pos + 4] << 8) | u8[pos + 5];
+            headerOffset = 6;
           }
 
-          if (frameSize <= 0 || pos + 10 + frameSize > u8.length) break;
+          if (frameSize <= 0 || pos + headerOffset + frameSize > u8.length) break;
 
-          if (frameId === 'APIC') {
-            const frame = u8.subarray(pos + 10, pos + 10 + frameSize);
-            const enc = frame[0];
-            let mimeEnd = 1;
-            while (mimeEnd < frame.length && frame[mimeEnd] !== 0) mimeEnd++;
-            let mime = '';
-            for (let i = 1; i < mimeEnd; i++) mime += String.fromCharCode(frame[i]);
-            if (!mime || mime === 'image/') mime = 'image/jpeg';
+          if (frameId === 'APIC' || frameId.startsWith('PIC')) {
+            const frame = u8.subarray(pos + headerOffset, pos + headerOffset + frameSize);
 
-            let offset = mimeEnd + 2;
-            if (enc === 0 || enc === 3) {
-              while (offset < frame.length && frame[offset] !== 0) offset++;
-              offset++;
-            } else {
-              while (offset < frame.length - 1 && !(frame[offset] === 0 && frame[offset + 1] === 0)) offset += 2;
-              offset += 2;
+            // Búsqueda directa por Magic Bytes para evitar fallos de codificación de texto
+            let imgStart = -1;
+            let mime = 'image/jpeg';
+
+            for (let i = 1; i < frame.length - 4; i++) {
+              if (frame[i] === 0xff && frame[i + 1] === 0xd8 && frame[i + 2] === 0xff) {
+                imgStart = i;
+                mime = 'image/jpeg';
+                break;
+              }
+              if (frame[i] === 0x89 && frame[i + 1] === 0x50 && frame[i + 2] === 0x4e && frame[i + 3] === 0x47) {
+                imgStart = i;
+                mime = 'image/png';
+                break;
+              }
+              if (frame[i] === 0x52 && frame[i + 1] === 0x49 && frame[i + 2] === 0x46 && frame[i + 3] === 0x46) {
+                imgStart = i;
+                mime = 'image/webp';
+                break;
+              }
             }
 
-            if (offset < frame.length) {
-              const imgBytes = frame.subarray(offset);
+            if (imgStart !== -1) {
+              const imgBytes = frame.subarray(imgStart);
               return new Blob([imgBytes], { type: mime });
             }
           }
-          pos += 10 + frameSize;
+          pos += headerOffset + frameSize;
         }
       }
     } catch {

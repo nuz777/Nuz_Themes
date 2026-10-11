@@ -82,6 +82,16 @@
          }
          @if (track.id.startsWith('user-')) {
            <button
+             (click)="openCoverChange(track, $event)"
+             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-white"
+             [attr.aria-label]="'Cambiar carátula de ' + track.title"
+             title="Cambiar carátula"
+           >
+             <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
+               <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+             </svg>
+           </button>
+           <button
              (click)="requestRemoveUserTrack(track, $event)"
              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-red-500/15 hover:text-red-300"
              [attr.aria-label]="'Eliminar ' + track.title + ' del dispositivo'"
@@ -143,4 +153,12 @@
       </div>
     </div>
   }
+
+  <input
+    #coverChangeInput
+    type="file"
+    accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic"
+    class="hidden"
+    (change)="onCoverFileSelected($event)"
+  />
 </div>

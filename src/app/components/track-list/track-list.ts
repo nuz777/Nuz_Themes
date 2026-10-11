@@ -1,4 +1,4 @@
-import { Component, input, inject, effect, untracked, signal } from '@angular/core';
+import { Component, input, inject, effect, untracked, signal, ViewChild, ElementRef } from '@angular/core';
 import type { Track } from '../../models/track';
 import { AudioService } from '../../services/audio.service';
 import { DurationService } from '../../services/duration.service';
@@ -14,6 +14,8 @@ import { ToastService } from '../../services/toast.service';
   templateUrl: './track-list.html',
 })
 export class TrackList {
+  @ViewChild('coverChangeInput') private coverChangeInput?: ElementRef<HTMLInputElement>;
+
   readonly tracks = input.required<Track[]>();
   readonly playlistId = input<string | null>(null);
   protected readonly audio = inject(AudioService);
@@ -22,6 +24,7 @@ export class TrackList {
   private readonly durations = inject(DurationService);
 
   protected readonly deleteTarget = signal<{ track: Track; type: 'device' | 'playlist' } | null>(null);
+  private activeCoverTrackId: string | null = null;
 
   constructor() {
     effect(() => {
@@ -84,5 +87,31 @@ export class TrackList {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  protected openCoverChange(track: Track, event: Event): void {
+    event.stopPropagation();
+    this.activeCoverTrackId = track.id;
+    if (this.coverChangeInput?.nativeElement) {
+      this.coverChangeInput.nativeElement.value = '';
+      this.coverChangeInput.nativeElement.click();
+    }
+  }
+
+  protected async onCoverFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const trackId = this.activeCoverTrackId;
+    this.activeCoverTrackId = null;
+    if (!file || !trackId) return;
+
+    await this.tracksService.updateTrackCover(trackId, file);
+    if (this.audio.currentTrack()?.id === trackId) {
+      const updated = this.tracksService.getTrack(trackId);
+      if (updated) {
+        this.audio.currentTrack.set(updated);
+      }
+    }
+    input.value = '';
   }
 }

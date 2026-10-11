@@ -24,6 +24,8 @@ export class PlaylistsPage {
   protected readonly selectedAudioFile = signal<File | null>(null);
   protected readonly selectedCoverFile = signal<File | null>(null);
   protected readonly coverPreview = signal<string | null>(null);
+  protected readonly isCoverCustom = signal(false);
+  protected readonly coverRemoved = signal(false);
   protected readonly trackTitle = signal('');
   protected readonly trackArtist = signal('');
   protected readonly trackAlbum = signal('');
@@ -79,11 +81,11 @@ export class PlaylistsPage {
       this.trackTitle.set(baseName || file.name);
     }
 
-    // Si el usuario no ha subido una carátula propia, intentar extraer la que viene incrustada en la canción
-    if (!this.selectedCoverFile()) {
+    // Si el usuario no ha elegido una carátula personalizada manualmente y no la ha quitado, extraer la incrustada
+    if (!this.isCoverCustom() && !this.coverRemoved()) {
       try {
         const embeddedBlob = await this.tracksService.extractEmbeddedCover(file);
-        if (embeddedBlob && !this.selectedCoverFile()) {
+        if (embeddedBlob && !this.isCoverCustom() && !this.coverRemoved()) {
           const coverFile = new File([embeddedBlob], 'cover.jpg', { type: embeddedBlob.type || 'image/jpeg' });
           this.selectedCoverFile.set(coverFile);
           const reader = new FileReader();
@@ -103,17 +105,10 @@ export class PlaylistsPage {
     const file = input.files?.[0];
     if (!file) return;
 
-    const isImage = (file.type && file.type.startsWith('image/')) ||
-      /\.(png|jpe?g|webp|gif|svg|avif|heic|bmp|ico)$/i.test(file.name);
-
-    if (!isImage) {
-      this.uploadError.set('Por favor, selecciona un archivo de imagen válido');
-      input.value = '';
-      return;
-    }
-
-    this.selectedCoverFile.set(file);
     this.uploadError.set(null);
+    this.isCoverCustom.set(true);
+    this.coverRemoved.set(false);
+    this.selectedCoverFile.set(file);
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -132,6 +127,8 @@ export class PlaylistsPage {
   }
 
   protected removeCover(): void {
+    this.isCoverCustom.set(false);
+    this.coverRemoved.set(true);
     this.selectedCoverFile.set(null);
     this.coverPreview.set(null);
     if (this.coverFileInput?.nativeElement) {
@@ -164,6 +161,7 @@ export class PlaylistsPage {
         this.tracksService.addUserTrack({
           file,
           cover: this.selectedCoverFile(),
+          noCover: this.coverRemoved(),
           title,
           artist: this.trackArtist().trim() || 'Artista desconocido',
           album: this.trackAlbum().trim() || 'Música local',
@@ -183,6 +181,8 @@ export class PlaylistsPage {
     this.selectedAudioFile.set(null);
     this.selectedCoverFile.set(null);
     this.coverPreview.set(null);
+    this.isCoverCustom.set(false);
+    this.coverRemoved.set(false);
     this.trackTitle.set('');
     this.trackArtist.set('');
     this.trackAlbum.set('');
