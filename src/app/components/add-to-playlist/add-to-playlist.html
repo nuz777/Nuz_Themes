@@ -38,7 +38,7 @@
         <div class="max-h-48 space-y-1 overflow-y-auto">
           @for (playlist of userPlaylists(); track playlist.id) {
             <div class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-neutral-200 transition hover:bg-white/5">
-              <img [src]="playlist.cover" [alt]="playlist.name" class="h-9 w-9 rounded object-cover" />
+              <img [src]="playlist.cover" [alt]="playlist.name" class="h-9 w-9 rounded object-cover" loading="lazy" decoding="async" />
               <span class="truncate">{{ playlist.name }}</span>
               <button
                 (click)="addToPlaylist(playlist.id, $event)"

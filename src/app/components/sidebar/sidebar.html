@@ -71,7 +71,7 @@
             [routerLink]="['/playlist', playlist.id]"
             class="flex items-center gap-3 rounded-md p-2 text-sm text-neutral-400 transition hover:bg-neutral-900 hover:text-white"
           >
-            <img [src]="playlist.cover" [alt]="playlist.name" class="h-12 w-12 rounded object-cover" loading="lazy" />
+            <img [src]="playlist.cover" [alt]="playlist.name" class="h-12 w-12 rounded object-cover" loading="lazy" decoding="async" />
             <span class="line-clamp-2">{{ playlist.name }}</span>
           </a>
         </li>

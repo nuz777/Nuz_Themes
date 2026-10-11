@@ -30,8 +30,14 @@ const angularApp = new AngularNodeAppEngine();
 app.use(
   express.static(browserDistFolder, {
     maxAge: '1y',
+    immutable: true,
     index: false,
     redirect: false,
+    setHeaders: (res, path) => {
+      if (/\.(webp|png|jpg|jpeg|svg|ico)$/i.test(path)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    },
   }),
 );
 

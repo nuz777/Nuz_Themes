@@ -2,11 +2,28 @@
   <div
     class="relative overflow-hidden bg-gradient-to-b from-neutral-800 via-neutral-950 to-black px-6 pb-6 pt-8"
   >
-    <div class="flex items-end gap-6">
+    @if (track.backgroundImage) {
+      <div class="pointer-events-none absolute inset-0 overflow-hidden">
+        <img
+          [src]="track.backgroundImage"
+          alt=""
+          class="h-full w-full object-cover opacity-25"
+          draggable="false"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+        <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-neutral-950"></div>
+      </div>
+    }
+    <div class="relative z-10 flex items-end gap-6">
       <img
         [src]="track.cover"
         [alt]="track.title"
         class="h-48 w-48 shrink-0 rounded shadow-2xl shadow-black"
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
       />
       <div class="min-w-0">
         <p class="text-xs font-bold uppercase tracking-widest text-neutral-400">Canción</p>

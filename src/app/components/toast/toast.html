@@ -11,7 +11,7 @@
       [attr.role]="toast.route ? 'button' : null"
     >
       @if (toast.cover) {
-        <img [src]="toast.cover" alt="" class="h-11 w-11 shrink-0 rounded-md bg-neutral-800 object-cover" />
+        <img [src]="toast.cover" alt="" class="h-11 w-11 shrink-0 rounded-md bg-neutral-800 object-cover" loading="eager" decoding="async" />
       }
       <span class="min-w-0 flex-1">{{ toast.text }}</span>
       <button

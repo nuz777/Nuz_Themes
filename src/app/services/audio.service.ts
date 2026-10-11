@@ -3,6 +3,7 @@ import type { Track } from '../models/track';
 import { OfflineStorageService } from './offline-storage.service';
 import { EqualizerService } from './equalizer.service';
 import { AudioQualityService, type AudioQuality } from './audio-quality.service';
+import { CoverCacheService } from './cover-cache.service';
 
 type RepeatMode = 'off' | 'all' | 'one';
 
@@ -23,6 +24,7 @@ export class AudioService {
   readonly qualityService = inject(AudioQualityService);
   private readonly offline = inject(OfflineStorageService);
   private readonly equalizer = inject(EqualizerService);
+  private readonly coverCache = inject(CoverCacheService);
 
   private audio: HTMLAudioElement | null = null;
   private queueIndex = -1;
@@ -105,8 +107,9 @@ export class AudioService {
     this.warmNext();
   }
 
-  /** Precarga la siguiente canción de la cola para que el cambio sea instantáneo. */
+  /** Precarga la siguiente canción de la cola y sus carátulas para que el cambio sea instantáneo. */
   private warmNext(): void {
+    this.coverCache.preloadQueue(this.currentTrack(), this.queue());
     const q = this.queue();
     if (!q.length || this.queueIndex < 0) return;
     const nextIndex = this.queueIndex + 1;

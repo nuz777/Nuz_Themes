@@ -24,6 +24,7 @@ export interface Track {
   blurBackground?: boolean;
   hideRhythmBars?: boolean;
   backgroundColor?: string;
+  backgroundImage?: string;
   showSun?: boolean;
   showStars?: boolean;
   showSnow?: boolean;

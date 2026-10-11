@@ -387,6 +387,9 @@ export class NowPlaying {
           'linear-gradient(180deg, #050b14 0%, #0a1728 40%, #11243d 70%, #07101d 100%)',
         );
         this.glowColor.set('#9ec5eb');
+      } else if (track?.backgroundImage) {
+        this.background.set('#000000');
+        this.glowColor.set('#000000');
       } else if (track?.backgroundColor) {
         if (track.backgroundColor === '#000000' || track.backgroundColor === '#000') {
           this.background.set('#000000');
@@ -400,6 +403,7 @@ export class NowPlaying {
       if (
         track &&
         !track.showSnow &&
+        !track.backgroundImage &&
         track.backgroundColor !== '#000000' &&
         track.backgroundColor !== '#000'
       ) {

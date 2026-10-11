@@ -21,4 +21,15 @@ export class AudioQualityButton {
   get currentQuality(): AudioQuality {
     return this.qualityService.quality();
   }
+
+  get currentQualityLabel(): string {
+    switch (this.currentQuality) {
+      case 'baja':
+        return 'Baja (64 kbps)';
+      case 'media':
+        return 'Media (128 kbps)';
+      case 'alta':
+        return 'Alta (HD)';
+    }
+  }
 }

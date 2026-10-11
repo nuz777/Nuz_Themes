@@ -41,7 +41,9 @@
               [src]="track.cover"
               [alt]="track.title"
               class="h-11 w-11 shrink-0 rounded-lg bg-neutral-800 object-cover shadow-sm sm:h-10 sm:w-10 sm:rounded"
-              loading="lazy"
+              [loading]="i < 8 ? 'eager' : 'lazy'"
+              [attr.fetchpriority]="i < 4 ? 'high' : 'low'"
+              decoding="async"
             />
             <span class="min-w-0">
               <span

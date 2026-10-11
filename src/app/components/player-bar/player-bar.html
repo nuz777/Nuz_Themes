@@ -51,6 +51,9 @@
           [alt]="track.title"
           [class.record-spin]="audio.isPlaying()"
           class="h-10 w-10 rounded-full border-4 border-neutral-900 object-cover shadow-lg shadow-black/50 md:h-14 md:w-14"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
         />
         <span class="pointer-events-none absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/70 bg-white/80 shadow-md"></span>
       </button>
@@ -69,13 +72,11 @@
         </button>
       </div>
       <app-favorite-button [track]="track" />
-      <app-audio-quality-button [compact]="true" class="md:hidden shrink-0" />
     </div>
   } @else {
     <div class="flex items-center gap-3 text-neutral-500">
       <div class="h-10 w-10 rounded bg-neutral-900 md:h-14 md:w-14"></div>
       <span class="text-sm">Nada sonando</span>
-      <app-audio-quality-button [compact]="true" class="md:hidden shrink-0" />
     </div>
   }
 

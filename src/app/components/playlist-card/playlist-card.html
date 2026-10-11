@@ -10,7 +10,9 @@
         class="absolute inset-0 h-full w-full rounded-full object-cover shadow-xl shadow-black transition-opacity duration-1000"
         [class.opacity-0]="i !== activeIndex()"
         [class.duration-500]="covers().length === 1"
-        loading="lazy"
+        [loading]="i === 0 ? 'eager' : 'lazy'"
+        [attr.fetchpriority]="i === 0 ? 'high' : 'low'"
+        decoding="async"
       />
     }
     <button
