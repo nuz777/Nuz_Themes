@@ -17,11 +17,11 @@ import { ChapterList } from '../chapter-list/chapter-list';
 import { DownloadButton } from '../download-button/download-button';
 import { FavoriteButton } from '../favorite-button/favorite-button';
 import { PipButton } from '../pip-button/pip-button';
-import { AudioQualityButton } from '../audio-quality/audio-quality-button';
+import { LivePlaylist } from '../live-playlist/live-playlist';
 
 @Component({
   selector: 'app-now-playing',
-  imports: [LyricsPanel, ChapterList, DownloadButton, FavoriteButton, PipButton, AudioQualityButton],
+  imports: [LyricsPanel, ChapterList, DownloadButton, FavoriteButton, PipButton, LivePlaylist],
   templateUrl: './now-playing.html',
   encapsulation: ViewEncapsulation.None,
   styles: [`
@@ -366,11 +366,37 @@ export class NowPlaying {
   protected readonly lyricsLoading = signal(false);
   protected readonly lyricsError = signal(false);
   protected readonly mobileLyricsOpen = signal(false);
+  protected readonly desktopRightTab = signal<'queue' | 'lyrics' | 'chapters'>('queue');
+  protected readonly showSidePanel = signal(true);
   protected readonly equalizerOpen = signal(false);
   protected readonly eqBands = EQ_BANDS;
   protected readonly eqPresets = EQ_PRESETS;
 
-  private static readonly WAVE_COUNT = 42;
+  protected toggleSidePanel(): void {
+    if (this.showSidePanel() && this.desktopRightTab() === 'queue') {
+      this.showSidePanel.set(false);
+      this.audio.showLiveQueue.set(false);
+    } else {
+      this.desktopRightTab.set('queue');
+      this.showSidePanel.set(true);
+      this.audio.showLiveQueue.set(true);
+    }
+  }
+
+  protected closeSidePanel(): void {
+    this.showSidePanel.set(false);
+    this.audio.showLiveQueue.set(false);
+  }
+
+  protected selectDesktopTab(tab: 'queue' | 'lyrics' | 'chapters'): void {
+    this.desktopRightTab.set(tab);
+    this.showSidePanel.set(true);
+    if (tab === 'queue') {
+      this.audio.showLiveQueue.set(true);
+    }
+  }
+
+  private static readonly WAVE_COUNT = 60;
 
   // Barras rítmicas de fondo (solo se muestran en canciones sin letra)
   protected readonly bgBars = Array.from({ length: 80 }, (_, i) => {
@@ -391,6 +417,9 @@ export class NowPlaying {
     effect(() => {
       const track = this.audio.currentTrack();
       this.mobileLyricsOpen.set(false);
+      if (!track?.lyricsUrl && this.desktopRightTab() === 'lyrics') {
+        this.desktopRightTab.set('queue');
+      }
       if (track?.showSnow) {
         this.background.set(
           'linear-gradient(180deg, #050b14 0%, #0a1728 40%, #11243d 70%, #07101d 100%)',
@@ -417,6 +446,14 @@ export class NowPlaying {
         track.backgroundColor !== '#000'
       ) {
         void this.ambient.getColor(track.cover).then((c) => this.glowColor.set(c));
+      }
+    });
+
+    effect(() => {
+      const liveQueueOpen = this.audio.showLiveQueue();
+      if (liveQueueOpen) {
+        this.desktopRightTab.set('queue');
+        this.showSidePanel.set(true);
       }
     });
 

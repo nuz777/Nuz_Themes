@@ -103,37 +103,30 @@
   </header>
 
   <!-- Lista de canciones en vivo -->
-  <div #listContainer class="min-h-0 flex-1 overflow-y-auto p-2 space-y-1 select-none">
+  <div #listContainer class="min-h-0 flex-1 overflow-y-auto px-3 py-2 space-y-1.5 select-none live-playlist-scroll">
     @if (queue().length > 0) {
       @for (track of queue(); track track.id + '-' + $index; let i = $index) {
         <div
           [attr.data-queue-idx]="i"
           (click)="onTrackClick(i)"
-          class="group relative flex items-center gap-3 rounded-xl p-2 cursor-pointer transition-all duration-150"
-          [class.bg-white/20]="currentIndex() === i"
+          class="group relative flex h-[54px] min-h-[54px] items-center gap-3 px-3 cursor-pointer transition-all duration-150 rounded-[12px]"
+          [class.bg-white/15]="currentIndex() === i"
           [class.backdrop-blur-md]="currentIndex() === i"
           [class.border]="currentIndex() === i"
-          [class.border-white/20]="currentIndex() === i"
+          [class.border-white/15]="currentIndex() === i"
           [class.text-white]="currentIndex() === i"
-          [class.shadow-lg]="currentIndex() === i"
-          [class.shadow-black/40]="currentIndex() === i"
-          [class.hover:bg-white/10]="currentIndex() !== i"
+          [class.shadow-sm]="currentIndex() === i"
+          [class.hover:bg-white/5]="currentIndex() !== i"
           [class.text-neutral-300]="currentIndex() !== i"
         >
-          <!-- Indicador izquierdo: Ecualizador animado / Pausa / Número -->
+          <!-- Indicador izquierdo: Ecualizador animado / Número -->
           <div class="flex w-6 shrink-0 items-center justify-center text-xs tabular-nums text-neutral-400">
             @if (currentIndex() === i) {
-              @if (audio.isPlaying()) {
-                <span class="flex items-end justify-center gap-[2px] h-3.5">
-                  <span class="equalizer-bar !bg-white"></span>
-                  <span class="equalizer-bar !bg-white"></span>
-                  <span class="equalizer-bar !bg-white"></span>
-                </span>
-              } @else {
-                <svg width="14" height="14" viewBox="0 0 24 24" class="fill-white">
-                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                </svg>
-              }
+              <span class="flex items-end justify-center gap-[2px] h-3.5" [class.equalizer-paused]="!audio.isPlaying()">
+                <span class="equalizer-bar !bg-white"></span>
+                <span class="equalizer-bar !bg-white"></span>
+                <span class="equalizer-bar !bg-white"></span>
+              </span>
             } @else {
               <span class="group-hover:hidden">{{ i + 1 }}</span>
               <svg width="14" height="14" viewBox="0 0 24 24" class="hidden fill-white group-hover:inline">
@@ -142,11 +135,11 @@
             }
           </div>
 
-          <!-- Carátula pequeña -->
+          <!-- Carátula pequeña 36px con radio 6px -->
           <img
             [src]="track.cover"
             [alt]="track.title"
-            class="h-10 w-10 shrink-0 rounded-lg object-cover bg-neutral-900 shadow-sm"
+            class="h-[36px] w-[36px] shrink-0 rounded-[6px] object-cover bg-neutral-900 shadow-sm"
             loading="lazy"
             decoding="async"
           />
@@ -154,20 +147,18 @@
           <!-- Metadatos de la canción -->
           <div class="min-w-0 flex-1">
             <p
-              class="truncate text-xs font-semibold leading-snug"
-              [class.text-white]="currentIndex() === i"
-              [class.font-bold]="currentIndex() === i"
+              class="truncate text-[13px] font-semibold leading-tight text-white"
             >
               {{ track.title }}
             </p>
-            <p class="truncate text-[11px] text-neutral-400 leading-none mt-0.5">
+            <p class="truncate text-[12px] text-neutral-400 leading-tight mt-0.5">
               {{ track.artist }}
             </p>
           </div>
 
           <!-- Duración / Botón de quitar al pasar el cursor -->
           <div class="shrink-0 flex items-center justify-end">
-            <span class="text-[11px] tabular-nums text-neutral-400 group-hover:hidden">
+            <span class="text-[12px] tabular-nums text-neutral-400 group-hover:hidden">
               {{ formatTime(durationOf(track)) }}
             </span>
             <button
@@ -197,14 +188,14 @@
   <!-- Pie de la lista con resumen -->
   @if (queue().length > 0) {
     <footer
-      class="shrink-0 border-t border-white/10 bg-black/30 backdrop-blur-xl px-4 py-2.5 text-xs text-neutral-400 flex items-center justify-between"
+      class="shrink-0 border-t border-white/10 bg-black/45 backdrop-blur-xl px-5 py-3 text-xs text-neutral-400 flex items-center justify-between"
       style="-webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);"
     >
-      <span class="tabular-nums">
+      <span class="tabular-nums text-[12px] text-neutral-300">
         {{ queue().length }} canciones &middot; {{ formattedTotalDuration() }}
       </span>
-      <span class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-        <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+      <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-300">
+        <span class="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
         Bucle continuo
       </span>
     </footer>

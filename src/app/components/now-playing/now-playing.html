@@ -201,10 +201,19 @@
 
     <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
     @for (track of currentTrackList(); track track.id) {
-      <div class="flex min-h-0 flex-1 flex-col items-center px-4 pb-6 sm:px-6 md:flex-row md:items-stretch md:gap-10 md:px-10 md:pb-8">
-        <div class="my-auto flex w-full flex-col items-center gap-7 md:min-w-0 md:flex-1">
+      <div
+        class="flex h-full min-h-0 w-full flex-1 flex-col md:flex-row items-stretch px-4 md:pl-6 md:pr-4 md:pb-6 overflow-hidden transition-all duration-350 ease-out"
+        [class.gap-0]="!showSidePanel()"
+        [class.md:gap-4]="showSidePanel()"
+        [class.lg:gap-5]="showSidePanel()"
+      >
+        <div
+          class="my-auto flex w-full flex-1 min-w-0 flex-col items-center justify-center gap-5 transition-all duration-350 ease-out"
+          [class.md:translate-x-3]="showSidePanel()"
+          [class.lg:translate-x-6]="showSidePanel()"
+        >
           <div
-            class="flex flex-col items-center gap-7"
+            class="flex flex-col items-center gap-5"
             animate.enter="track-enter"
             (touchstart)="onMobileLyricsTouchStart($event)"
             (touchend)="onMobileLyricsTouchEnd($event)"
@@ -217,7 +226,7 @@
           >
             <div
               aria-hidden="true"
-              class="absolute -inset-8 -z-10 rounded-full blur-3xl transition-opacity duration-700"
+              class="absolute -inset-6 -z-10 rounded-[28px] blur-3xl transition-opacity duration-700"
               [style.background]="glowColor()"
               [class.opacity-25]="audio.isPlaying()"
               [class.opacity-10]="!audio.isPlaying()"
@@ -226,7 +235,7 @@
             <img
               [src]="track.cover"
               [alt]="track.title"
-              class="h-52 w-52 max-h-[38dvh] rounded-2xl border border-white/10 bg-neutral-950 object-cover shadow-2xl shadow-black ring-1 ring-white/10 transition-all duration-500 sm:h-64 sm:w-64"
+              class="w-[clamp(200px,17vw,260px)] h-[clamp(200px,17vw,260px)] aspect-square rounded-[22px] border border-white/10 bg-neutral-950 object-cover shadow-2xl shadow-black ring-1 ring-white/10 transition-all duration-500"
               [class.ring-white/30]="audio.isPlaying()"
               loading="eager"
               fetchpriority="high"
@@ -242,8 +251,8 @@
           </div>
 
           <div class="w-full max-w-xl text-center">
-            <h2 class="truncate text-2xl font-black text-white sm:text-3xl">{{ track.title }}</h2>
-            <p class="mt-1 truncate text-base font-semibold text-neutral-200 sm:text-lg">{{ track.artist }}</p>
+            <h2 class="truncate text-[26px] font-black tracking-tight text-white leading-tight">{{ track.title }}</h2>
+            <p class="mt-1 truncate text-[16px] font-bold text-neutral-200 leading-tight">{{ track.artist }}</p>
             @if (track.lyricsUrl && !mobileLyricsOpen()) {
               <button
                 (click)="mobileLyricsOpen.set(true)"
@@ -263,52 +272,55 @@
           </div>
         </div>
 
-        <div class="w-3/4 max-w-xl sm:w-full lg:max-w-lg">
-          <div class="relative ml-3 sm:ml-0">
-            <button
-              (click)="audio.seekBy(-5)"
-              class="absolute -left-20 top-8 hidden h-9 -translate-y-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2.5 text-xs font-bold text-neutral-300 transition hover:bg-white/10 hover:text-white sm:flex"
-              aria-label="Retroceder cinco segundos"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
-                <path d="M12 5V2L7 7l5 5V9c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
-              </svg>
-              <span>5s</span>
-            </button>
+        <div class="flex w-full max-w-[580px] items-center justify-center gap-2 sm:gap-3 transition-all duration-500">
+          <button
+            (click)="audio.seekBy(-5)"
+            class="flex h-8 shrink-0 items-center gap-1 rounded-full border border-white/10 bg-black/35 px-2.5 text-xs font-bold text-neutral-300 backdrop-blur-md transition hover:bg-white/15 hover:text-white active:scale-95"
+            aria-label="Retroceder cinco segundos"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" class="fill-current" aria-hidden="true">
+              <path d="M12 5V2L7 7l5 5V9c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
+            </svg>
+            <span>5s</span>
+          </button>
+
+          <div class="flex-1 min-w-0 max-w-[460px] flex flex-col">
             <div
-               class="flex h-15 cursor-pointer items-center gap-[3px] sm:gap-[5px] touch-none select-none"
+              class="flex h-[44px] w-full cursor-pointer items-center gap-[2px] sm:gap-[2.5px] touch-none select-none"
               (pointerdown)="onWavePointerDown($event)"
             >
               @for (bar of waves(); track $index; let i = $index) {
                 <span
-                  class="w-full min-w-0 max-w-[6px] flex-1 rounded-full transition-colors duration-150 lg:max-w-none"
+                  class="min-w-0 flex-1 rounded-full transition-colors duration-150"
                   [style.height.%]="bar"
                   [style.animationDelay.ms]="(i % 12) * 60"
                   [class.bg-white]="i < played()"
-                  [class.bg-white/15]="i >= played()"
+                  [class.bg-white/20]="i >= played()"
                   [class.wave-live]="i < played() && audio.isPlaying()"
                 ></span>
               }
             </div>
-            <div class="relative mt-1 flex items-center justify-between text-xs font-semibold text-neutral-200 sm:block sm:h-4">
-              <span class="tabular-nums sm:absolute sm:left-0">{{ formatTime(audio.currentTime()) }}</span>
-              <span class="tabular-nums sm:absolute sm:right-0">{{ formatTime(audio.duration()) }}</span>
+
+            <div class="flex items-center justify-between pt-1 text-xs font-semibold text-neutral-300">
+              <span class="tabular-nums">{{ formatTime(audio.currentTime()) }}</span>
+              <span class="tabular-nums">{{ formatTime(audio.duration()) }}</span>
             </div>
-            <button
-              (click)="audio.seekBy(5)"
-              class="absolute -right-20 top-8 hidden h-9 -translate-y-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2.5 text-xs font-bold text-neutral-300 transition hover:bg-white/10 hover:text-white sm:flex"
-              aria-label="Adelantar cinco segundos"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" class="rotate-180 fill-current" aria-hidden="true">
-                <path d="M12 5V2L7 7l5 5V9c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
-              </svg>
-              <span>5s</span>
-            </button>
           </div>
+
+          <button
+            (click)="audio.seekBy(5)"
+            class="flex h-8 shrink-0 items-center gap-1 rounded-full border border-white/10 bg-black/35 px-2.5 text-xs font-bold text-neutral-300 backdrop-blur-md transition hover:bg-white/15 hover:text-white active:scale-95"
+            aria-label="Adelantar cinco segundos"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" class="rotate-180 fill-current" aria-hidden="true">
+              <path d="M12 5V2L7 7l5 5V9c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
+            </svg>
+            <span>5s</span>
+          </button>
         </div>
 
         @if (chapters().length) {
-          <div class="-mx-4 mt-5 w-screen max-w-none overflow-x-auto px-4 pb-1 md:hidden">
+          <div class="-mx-4 mt-2 w-screen max-w-none overflow-x-auto px-4 pb-1 md:hidden">
             <app-chapter-list
               [chapters]="chapters()"
               [activeIndex]="activeChapterIndex()"
@@ -318,12 +330,12 @@
           </div>
         }
 
-        <div class="flex items-center gap-1 rounded-full border border-white/10 bg-black/30 px-3 py-3 shadow-2xl shadow-black/50 backdrop-blur-md sm:gap-5 sm:px-6">
+        <div class="flex w-full max-w-[460px] items-center justify-between rounded-full border border-white/10 bg-black/40 px-3.5 sm:px-4 py-2 shadow-2xl shadow-black/60 backdrop-blur-xl">
           <button
             (click)="audio.toggleShuffle()"
             [class.text-white]="audio.shuffle()"
-            [class.text-neutral-300]="!audio.shuffle()"
-            class="shrink-0 p-1 transition hover:scale-110 hover:text-white"
+            [class.text-neutral-400]="!audio.shuffle()"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition hover:scale-110 hover:text-white"
             aria-label="Aleatorio"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current">
@@ -333,36 +345,36 @@
 
           <button
             (click)="audio.prev()"
-            class="shrink-0 p-1 text-neutral-200 transition hover:scale-110 hover:text-white"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-200 transition hover:scale-110 hover:text-white"
             aria-label="Anterior"
           >
-            <svg width="34" height="34" viewBox="0 0 24 24" class="fill-current">
+            <svg width="24" height="24" viewBox="0 0 24 24" class="fill-current">
               <path d="M6 6h2v12H6V6zm3.5 6 8.5 6V6l-8.5 6z" />
             </svg>
           </button>
 
           <button
             (click)="audio.togglePlay()"
-            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-black shadow-[0_0_35px_-6px_rgba(255,255,255,0.55)] transition hover:scale-110 sm:h-16 sm:w-16"
+            class="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.5)] transition hover:scale-105 active:scale-95"
             aria-label="Reproducir o pausar"
           >
             @if (audio.isPlaying()) {
-              <svg width="28" height="28" viewBox="0 0 24 24" class="fill-current">
+              <svg width="26" height="26" viewBox="0 0 24 24" class="fill-current">
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
               </svg>
             } @else {
-              <svg width="28" height="28" viewBox="0 0 24 24" class="fill-current translate-x-0.5">
-                <path d="M8 5v14l11-7L8 5z" />
+              <svg width="26" height="26" viewBox="0 0 24 24" class="fill-current translate-x-0.5">
+                <path d="M8 5v14l11-7z" />
               </svg>
             }
           </button>
 
           <button
             (click)="audio.next()"
-            class="shrink-0 p-1 text-neutral-200 transition hover:scale-110 hover:text-white"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-200 transition hover:scale-110 hover:text-white"
             aria-label="Siguiente"
           >
-            <svg width="34" height="34" viewBox="0 0 24 24" class="fill-current">
+            <svg width="24" height="24" viewBox="0 0 24 24" class="fill-current">
               <path d="M16 6h2v12h-2V6zM6 18l8.5-6L6 6v12z" />
             </svg>
           </button>
@@ -370,8 +382,8 @@
           <button
             (click)="audio.toggleRepeat()"
             [class.text-white]="audio.repeat() !== 'off'"
-            [class.text-neutral-300]="audio.repeat() === 'off'"
-            class="relative shrink-0 p-1 transition hover:scale-110 hover:text-white"
+            [class.text-neutral-400]="audio.repeat() === 'off'"
+            class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition hover:scale-110 hover:text-white"
             aria-label="Repetir"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current">
@@ -382,21 +394,33 @@
             }
           </button>
 
-           <button
-             (click)="equalizerOpen.update((open) => !open)"
-             [class.text-white]="equalizerOpen()"
-             [class.text-neutral-300]="!equalizerOpen()"
-             [disabled]="!equalizer.isSupported"
-             class="shrink-0 p-1 text-xs font-black transition hover:scale-110 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-             aria-label="Abrir ecualizador"
-           >
-             EQ
-           </button>
-           <app-pip-button />
-           <app-favorite-button [track]="track" />
-           <app-download-button [track]="track" />
-           <app-audio-quality-button class="hidden md:inline-flex" />
-           </div>
+          <button
+            (click)="equalizerOpen.update((open) => !open)"
+            [class.text-white]="equalizerOpen()"
+            [class.text-neutral-400]="!equalizerOpen()"
+            [disabled]="!equalizer.isSupported"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black transition hover:scale-110 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Abrir ecualizador"
+          >
+            EQ
+          </button>
+          <app-pip-button />
+          <app-favorite-button [track]="track" />
+          <app-download-button [track]="track" />
+          <button
+            (click)="toggleSidePanel()"
+            [class.text-white]="showSidePanel() && desktopRightTab() === 'queue'"
+            [class.bg-white/20]="showSidePanel() && desktopRightTab() === 'queue'"
+            [class.text-neutral-400]="!showSidePanel() || desktopRightTab() !== 'queue'"
+            class="hidden md:inline-flex shrink-0 h-9 w-9 items-center justify-center rounded-full transition-all duration-200 hover:scale-110 hover:text-white"
+            [title]="showSidePanel() && desktopRightTab() === 'queue' ? 'Ocultar lista de reproducción' : 'Mostrar lista de reproducción en vivo'"
+            [attr.aria-label]="showSidePanel() && desktopRightTab() === 'queue' ? 'Ocultar lista de reproducción' : 'Mostrar lista de reproducción en vivo'"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current">
+              <path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z" />
+            </svg>
+          </button>
+        </div>
 
          @if (equalizerOpen()) {
            <div
@@ -513,25 +537,110 @@
          }
         </div>
 
-      @if (track.lyricsUrl || chapters().length) {
-        <div class="hidden w-1/2 min-w-0 self-stretch overflow-y-auto md:block">
-          @if (chapters().length) {
-            <app-chapter-list
-              [chapters]="chapters()"
-              [activeIndex]="activeChapterIndex()"
-              (select)="onChapterSelect($event)"
-            />
-          }
-          @if (track.lyricsUrl) {
-            <app-lyrics-panel
-              [lines]="lyrics()"
-              [activeIndex]="activeLyricIndex()"
-              [loading]="lyricsLoading()"
-              [error]="lyricsError()"
-            />
-          }
+      <div
+        class="hidden md:flex flex-col shrink-0 self-stretch rounded-[20px] bg-black/30 backdrop-blur-2xl overflow-hidden transition-all duration-350 ease-out"
+        style="-webkit-backdrop-filter: blur(28px); backdrop-filter: blur(28px);"
+        [class.w-0]="!showSidePanel()"
+        [class.opacity-0]="!showSidePanel()"
+        [class.pointer-events-none]="!showSidePanel()"
+        [class.translate-x-8]="!showSidePanel()"
+        [class.border-0]="!showSidePanel()"
+        [class.shadow-none]="!showSidePanel()"
+        [class.w-full]="showSidePanel()"
+        [class.md:w-[clamp(480px,47vw,800px)]]="showSidePanel()"
+        [class.opacity-100]="showSidePanel()"
+        [class.translate-x-0]="showSidePanel()"
+        [class.border]="showSidePanel()"
+        [class.border-white/15]="showSidePanel()"
+        [class.shadow-2xl]="showSidePanel()"
+        [class.shadow-black/60]="showSidePanel()"
+      >
+        <div class="w-[clamp(480px,47vw,800px)] h-full min-h-0 flex flex-col shrink-0">
+          <!-- Pestañas superiores en PC: Lista en vivo / Letra / Capítulos -->
+          <div
+            class="flex items-center justify-between border-b border-white/10 px-4 py-2.5 shrink-0 bg-white/5 backdrop-blur-md"
+            style="-webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);"
+          >
+            <div class="flex items-center gap-2">
+              <button
+                (click)="selectDesktopTab('queue')"
+                [class.bg-white/20]="desktopRightTab() === 'queue'"
+                [class.text-white]="desktopRightTab() === 'queue'"
+                [class.text-neutral-400]="desktopRightTab() !== 'queue'"
+                class="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition hover:bg-white/10 hover:text-white"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" class="fill-current">
+                  <path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z" />
+                </svg>
+                <span>Lista en vivo</span>
+                @if (audio.queue().length > 0) {
+                  <span class="rounded-full bg-white/20 px-1.5 py-0.2 text-[10px] font-bold text-white tabular-nums">
+                    {{ audio.queue().length }}
+                  </span>
+                }
+              </button>
+
+              @if (track.lyricsUrl) {
+                <button
+                  (click)="selectDesktopTab('lyrics')"
+                  [class.bg-white/20]="desktopRightTab() === 'lyrics'"
+                  [class.text-white]="desktopRightTab() === 'lyrics'"
+                  [class.text-neutral-400]="desktopRightTab() !== 'lyrics'"
+                  class="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition hover:bg-white/10 hover:text-white"
+                >
+                  Letra
+                </button>
+              }
+
+              @if (chapters().length) {
+                <button
+                  (click)="selectDesktopTab('chapters')"
+                  [class.bg-white/20]="desktopRightTab() === 'chapters'"
+                  [class.text-white]="desktopRightTab() === 'chapters'"
+                  [class.text-neutral-400]="desktopRightTab() !== 'chapters'"
+                  class="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition hover:bg-white/10 hover:text-white"
+                >
+                  Capítulos
+                </button>
+              }
+            </div>
+
+            <button
+              (click)="closeSidePanel()"
+              class="flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 transition hover:bg-white/10 hover:text-white"
+              title="Ocultar panel"
+              aria-label="Ocultar panel"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" class="fill-current">
+                <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="min-h-0 flex-1 overflow-y-auto">
+            @if (desktopRightTab() === 'queue' || (!track.lyricsUrl && !chapters().length)) {
+              <app-live-playlist [embedded]="true" />
+            } @else if (desktopRightTab() === 'lyrics' && track.lyricsUrl) {
+              <div class="p-4">
+                <app-lyrics-panel
+                  [lines]="lyrics()"
+                  [activeIndex]="activeLyricIndex()"
+                  [loading]="lyricsLoading()"
+                  [error]="lyricsError()"
+                />
+              </div>
+            } @else if (desktopRightTab() === 'chapters' && chapters().length) {
+              <div class="p-4">
+                <app-chapter-list
+                  [chapters]="chapters()"
+                  [activeIndex]="activeChapterIndex()"
+                  (select)="onChapterSelect($event)"
+                />
+              </div>
+            }
+          </div>
         </div>
-      }
+      </div>
       </div>
     } @empty {
       <div class="flex flex-1 items-center justify-center text-neutral-300">
