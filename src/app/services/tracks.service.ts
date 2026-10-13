@@ -888,6 +888,17 @@ export class TracksService {
         duration: 343,
       },
       {
+        id: 'anim9',
+        title: 'Merry Christmas',
+        artist: 'Hatsune Miku',
+        album: 'Animation',
+        cover: '/caratulas/mikuMerryChirsmas.png',
+        audioUrl: '/music/' + encodeURIComponent('Hatsune Miku Merry Christmas 2016.mp3'),
+        videoUrl: '/video/' + encodeURIComponent('Hatsune Miku Merry Christmas 2016.mp4'),
+        lyricsUrl: '/lyrics/merry-christmas.lrc',
+        duration: 190,
+      },
+      {
         id: 'nuz4',
         title: 'Russian Car Driver',
         artist: 'OST',
@@ -1010,7 +1021,7 @@ export class TracksService {
         name: 'animation',
         description: 'Música de tus animaciones.',
         cover: '/caratulas/image.webp',
-        trackIds: ['local1', 'anim1', 'anim2', 'anim3', 'anim4', 'anim5', 'anim6', 'anim7', 'anim8'],
+        trackIds: ['local1', 'anim1', 'anim2', 'anim3', 'anim4', 'anim5', 'anim6', 'anim7', 'anim8', 'anim9'],
       },
       {
         id: 'phonk',

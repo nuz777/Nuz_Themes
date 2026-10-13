@@ -31,7 +31,7 @@ export class Home {
   }
 
   protected readonly featuredTracks = computed(() => {
-    const featuredIds = ['doom1', 'anim4', 'classic2', 'nuz1', 'ph1', 'sni4', 'nuz5'];
+    const featuredIds = ['doom1', 'anim4', 'classic2', 'anim9', 'nuz1', 'ph1', 'sni4', 'nuz5'];
     const tracks = this.tracksService.tracks();
     return featuredIds
       .map((id) => tracks.find((track) => track.id === id))
